@@ -1,10 +1,26 @@
 // src/components/Optimizer/Optimizer.tsx
 import { useState, useEffect } from 'react'
 import api from '../../services/api'
-import { Trophy, Search, Zap } from 'lucide-react'
+import { Trophy, Search, Zap, Clock } from 'lucide-react'
+
+type Mode = 'single' | 'single-multi-tf' | 'all' | 'all-multi-tf'
+
+const MODE_LABELS: Record<Mode, string> = {
+  'single': '1 strategie',
+  'single-multi-tf': '1 strat. multi-TF',
+  'all': 'Toutes',
+  'all-multi-tf': 'Toutes multi-TF',
+}
+
+const MODE_DESC: Record<Mode, string> = {
+  'single': 'Teste ~29 combos SL/TP pour 1 strategie sur 1 timeframe',
+  'single-multi-tf': 'Teste 1 strategie sur 4 timeframes x ~29 combos = ~116 backtests',
+  'all': 'Teste 10 strategies x ~29 combos = ~290 backtests sur 1 timeframe',
+  'all-multi-tf': 'Teste 10 strategies x 4 timeframes x ~29 combos = ~1160 backtests',
+}
 
 export default function Optimizer() {
-  const [mode, setMode] = useState<'single' | 'all' | 'timeframes'>('single')
+  const [mode, setMode] = useState<Mode>('single')
   const [strategy, setStrategy] = useState('rsi_macd_combo')
   const [symbol, setSymbol] = useState('BTC/USDT')
   const [timeframe, setTimeframe] = useState('1h')
@@ -12,34 +28,62 @@ export default function Optimizer() {
   const [capital, setCapital] = useState(1000)
   const [types, setTypes] = useState<string[]>([])
   const [results, setResults] = useState<any>(null)
+  const [history, setHistory] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
-  const [sortBy, setSortBy] = useState('win_rate')
+  const [sortBy, setSortBy] = useState('total_pnl')
+
+  const showStrategy = mode === 'single' || mode === 'single-multi-tf'
+  const showTimeframe = mode === 'single' || mode === 'all'
 
   useEffect(() => {
     api.get('/strategies/types').then((r) => setTypes(r.data.available))
+    loadHistory()
   }, [])
+
+  const loadHistory = () => {
+    api.get('/optimizer/history').then((r) => setHistory(r.data)).catch(() => {})
+  }
 
   const runOptimize = async () => {
     setLoading(true)
     setResults(null)
     const parts = symbol.split('/')
     try {
-      let data
+      let url = ''
       if (mode === 'single') {
-        const r = await api.post(`/optimizer/optimize/${strategy}/${parts[0]}/${parts[1]}?timeframe=${timeframe}&limit=${limit}&capital=${capital}`)
-        data = r.data
+        url = `/optimizer/single/${strategy}/${parts[0]}/${parts[1]}?timeframe=${timeframe}&limit=${limit}&capital=${capital}`
+      } else if (mode === 'single-multi-tf') {
+        url = `/optimizer/single-multi-tf/${strategy}/${parts[0]}/${parts[1]}?limit=${limit}&capital=${capital}`
       } else if (mode === 'all') {
-        const r = await api.post(`/optimizer/optimize-all/${parts[0]}/${parts[1]}?timeframe=${timeframe}&limit=${limit}&capital=${capital}`)
-        data = r.data
+        url = `/optimizer/all/${parts[0]}/${parts[1]}?timeframe=${timeframe}&limit=${limit}&capital=${capital}`
       } else {
-        const r = await api.post(`/optimizer/optimize-timeframes/${parts[0]}/${parts[1]}?limit=${limit}&capital=${capital}`)
-        data = r.data
+        url = `/optimizer/all-multi-tf/${parts[0]}/${parts[1]}?limit=${limit}&capital=${capital}`
       }
+      const { data } = await api.post(url)
       setResults(data)
+      loadHistory()
     } catch (e: any) {
       setResults({ error: e.response?.data?.detail || 'Erreur (timeout Binance?)' })
     }
     setLoading(false)
+  }
+
+  const loadSaved = async (id: number) => {
+    try {
+      const { data } = await api.get(`/optimizer/history/${id}`)
+      if (data.top_results && data.top_results.length > 0) {
+        setResults({
+          best: data.top_results[0],
+          combinations_tested: data.combinations_tested,
+          all_results: data.top_results,
+        })
+      }
+    } catch {}
+  }
+
+  const deleteSaved = async (id: number) => {
+    await api.delete(`/optimizer/history/${id}`)
+    loadHistory()
   }
 
   const sortResults = (list: any[]) => {
@@ -52,8 +96,9 @@ export default function Optimizer() {
     })
   }
 
-  const allResults = results?.all_results || results?.top_20 || []
+  const allResults = results?.all_results || []
   const sorted = sortResults(allResults)
+  const best = sorted.length > 0 ? sorted[0] : results?.best
 
   return (
     <div>
@@ -65,22 +110,16 @@ export default function Optimizer() {
           <div className="space-y-3">
             <div>
               <label className="text-xs text-gray-400 mb-1 block">Mode de recherche</label>
-              <div className="flex gap-1">
-                <button onClick={() => setMode('single')}
-                  className={`flex-1 p-2 rounded text-xs ${mode === 'single' ? 'bg-purple-600' : 'bg-gray-800'}`}>
-                  1 strategie
-                </button>
-                <button onClick={() => setMode('all')}
-                  className={`flex-1 p-2 rounded text-xs ${mode === 'all' ? 'bg-purple-600' : 'bg-gray-800'}`}>
-                  Toutes
-                </button>
-                <button onClick={() => setMode('timeframes')}
-                  className={`flex-1 p-2 rounded text-xs ${mode === 'timeframes' ? 'bg-purple-600' : 'bg-gray-800'}`}>
-                  Multi-timeframe
-                </button>
+              <div className="grid grid-cols-2 gap-1">
+                {(Object.keys(MODE_LABELS) as Mode[]).map((m) => (
+                  <button key={m} onClick={() => setMode(m)}
+                    className={`p-2 rounded text-xs ${mode === m ? 'bg-purple-600' : 'bg-gray-800'}`}>
+                    {MODE_LABELS[m]}
+                  </button>
+                ))}
               </div>
             </div>
-            {mode === 'single' && (
+            {showStrategy && (
               <div>
                 <label className="text-xs text-gray-400 mb-1 block">Strategie</label>
                 <select value={strategy} onChange={(e) => setStrategy(e.target.value)}
@@ -96,7 +135,7 @@ export default function Optimizer() {
                 <option>BTC/USDT</option><option>ETH/USDT</option><option>BNB/USDT</option>
               </select>
             </div>
-            {mode !== 'timeframes' && (
+            {showTimeframe && (
               <div>
                 <label className="text-xs text-gray-400 mb-1 block">Timeframe</label>
                 <select value={timeframe} onChange={(e) => setTimeframe(e.target.value)}
@@ -118,11 +157,7 @@ export default function Optimizer() {
               <input type="number" value={capital} onChange={(e) => setCapital(+e.target.value)}
                 className="w-full p-3 bg-gray-800 rounded-lg border border-gray-700 outline-none" />
             </div>
-            <p className="text-xs text-gray-600">
-              {mode === 'single' ? 'Teste ~30 combinaisons SL/TP pour 1 strategie' :
-               mode === 'all' ? 'Teste ~30 combos × 7 strategies = ~210 backtests' :
-               'Teste 7 strategies × 4 timeframes × ~30 combos = ~840 backtests'}
-            </p>
+            <p className="text-xs text-gray-600">{MODE_DESC[mode]}</p>
             <button onClick={runOptimize} disabled={loading}
               className="w-full p-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium disabled:opacity-50 flex items-center justify-center gap-2">
               {loading ? (
@@ -134,61 +169,68 @@ export default function Optimizer() {
           </div>
         </div>
 
-        {results?.best && (
+        {best && !results?.error && (
           <div className="lg:col-span-2 bg-gray-900 p-5 rounded-xl">
             <div className="flex items-center gap-2 mb-4">
               <Trophy size={20} className="text-yellow-400" />
-              <h3 className="font-semibold">Meilleur resultat</h3>
+              <h3 className="font-semibold">Meilleur resultat (par PnL)</h3>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
               <div className="bg-gray-800 p-3 rounded-lg">
                 <p className="text-xs text-gray-400">Strategie</p>
-                <p className="font-bold text-purple-400">{results.best.strategy}</p>
-              </div>
-              <div className="bg-gray-800 p-3 rounded-lg">
-                <p className="text-xs text-gray-400">Win Rate</p>
-                <p className="font-bold text-green-400">{(results.best.win_rate * 100).toFixed(1)}%</p>
+                <p className="font-bold text-purple-400">{best.strategy}</p>
               </div>
               <div className="bg-gray-800 p-3 rounded-lg">
                 <p className="text-xs text-gray-400">PnL</p>
-                <p className={`font-bold ${results.best.total_pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>{results.best.total_pnl} USDT</p>
+                <p className={`font-bold ${best.total_pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>{best.total_pnl} USDT</p>
+              </div>
+              <div className="bg-gray-800 p-3 rounded-lg">
+                <p className="text-xs text-gray-400">Win Rate</p>
+                <p className={`font-bold ${best.win_rate >= 0.5 ? 'text-green-400' : 'text-yellow-400'}`}>{(best.win_rate * 100).toFixed(1)}%</p>
               </div>
               <div className="bg-gray-800 p-3 rounded-lg">
                 <p className="text-xs text-gray-400">Trades (TP/SL)</p>
-                <p className="font-bold"><span className="text-green-400">{results.best.winning_trades}</span> / <span className="text-red-400">{results.best.losing_trades}</span></p>
+                <p className="font-bold">
+                  <span className="text-green-400">{best.winning_trades || '?'}</span> / <span className="text-red-400">{best.losing_trades || '?'}</span>
+                </p>
               </div>
               <div className="bg-gray-800 p-3 rounded-lg">
                 <p className="text-xs text-gray-400">Stop-Loss</p>
-                <p className="font-bold">{(results.best.sl_pct * 100).toFixed(1)}%</p>
+                <p className="font-bold">{(best.sl_pct * 100).toFixed(1)}%</p>
               </div>
               <div className="bg-gray-800 p-3 rounded-lg">
                 <p className="text-xs text-gray-400">Take-Profit</p>
-                <p className="font-bold">{(results.best.tp_pct * 100).toFixed(1)}%</p>
+                <p className="font-bold">{(best.tp_pct * 100).toFixed(1)}%</p>
               </div>
               <div className="bg-gray-800 p-3 rounded-lg">
                 <p className="text-xs text-gray-400">Timeframe</p>
-                <p className="font-bold">{results.best.timeframe || timeframe}</p>
+                <p className="font-bold">{best.timeframe || '-'}</p>
               </div>
               <div className="bg-gray-800 p-3 rounded-lg">
-                <p className="text-xs text-gray-400">Max Drawdown</p>
-                <p className="font-bold">{(results.best.max_drawdown * 100).toFixed(2)}%</p>
+                <p className="text-xs text-gray-400">Capital final</p>
+                <p className={`font-bold ${best.final_capital >= capital ? 'text-green-400' : 'text-red-400'}`}>{best.final_capital} USDT</p>
               </div>
             </div>
-            <p className="text-xs text-gray-500">{results.combinations_tested} combinaisons testees sur {results.candles || '?'} bougies</p>
+            <p className="text-xs text-gray-500">{results?.combinations_tested || '?'} combinaisons testees</p>
+          </div>
+        )}
+
+        {results?.error && (
+          <div className="lg:col-span-2 bg-red-900/20 border border-red-800 p-5 rounded-xl flex items-center">
+            <p className="text-red-400">{results.error}</p>
           </div>
         )}
       </div>
 
       {sorted.length > 0 && (
-        <div className="bg-gray-900 p-5 rounded-xl">
+        <div className="bg-gray-900 p-5 rounded-xl mb-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold">Classement ({sorted.length} resultats)</h3>
             <div className="flex gap-1">
-              <label className="text-xs text-gray-400 mt-2 mr-2">Trier par:</label>
               {[
-                { key: 'win_rate', label: 'Win Rate' },
                 { key: 'total_pnl', label: 'PnL' },
-                { key: 'profit_factor', label: 'Profit Factor' },
+                { key: 'win_rate', label: 'Win Rate' },
+                { key: 'profit_factor', label: 'Profit F.' },
                 { key: 'max_drawdown', label: 'Drawdown' },
               ].map((s) => (
                 <button key={s.key} onClick={() => setSortBy(s.key)}
@@ -203,7 +245,7 @@ export default function Optimizer() {
               <thead className="sticky top-0 bg-gray-900"><tr className="text-gray-400 border-b border-gray-800">
                 <th className="text-left py-2 px-2">#</th>
                 <th className="text-left px-2">Strategie</th>
-                {mode === 'timeframes' && <th className="px-2">TF</th>}
+                <th className="px-2">TF</th>
                 <th className="px-2">SL</th>
                 <th className="px-2">TP</th>
                 <th className="px-2">Trades</th>
@@ -217,9 +259,9 @@ export default function Optimizer() {
               <tbody>
                 {sorted.map((r: any, i: number) => (
                   <tr key={i} className={`border-b border-gray-800 ${i === 0 ? 'bg-yellow-900/20' : ''}`}>
-                    <td className="py-2 px-2">{i === 0 ? '🏆' : i + 1}</td>
+                    <td className="py-2 px-2">{i === 0 ? '\u{1F3C6}' : i + 1}</td>
                     <td className="px-2 text-purple-400">{r.strategy}</td>
-                    {mode === 'timeframes' && <td className="px-2">{r.timeframe}</td>}
+                    <td className="px-2">{r.timeframe || '-'}</td>
                     <td className="px-2">{(r.sl_pct * 100).toFixed(1)}%</td>
                     <td className="px-2">{(r.tp_pct * 100).toFixed(1)}%</td>
                     <td className="px-2 text-center">{r.total_trades}</td>
@@ -229,7 +271,7 @@ export default function Optimizer() {
                         {(r.win_rate * 100).toFixed(1)}%
                       </span>
                     </td>
-                    <td className={`px-2 text-center ${r.total_pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>{r.total_pnl}</td>
+                    <td className={`px-2 text-center font-medium ${r.total_pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>{r.total_pnl}</td>
                     <td className={`px-2 text-center ${r.final_capital >= capital ? 'text-green-400' : 'text-red-400'}`}>{r.final_capital}</td>
                     <td className="px-2 text-center">{(r.max_drawdown * 100).toFixed(1)}%</td>
                     <td className={`px-2 text-center ${(r.profit_factor || 0) >= 1 ? 'text-green-400' : 'text-red-400'}`}>{r.profit_factor || '-'}</td>
@@ -241,9 +283,51 @@ export default function Optimizer() {
         </div>
       )}
 
-      {results?.error && (
-        <div className="bg-red-900/20 border border-red-800 p-4 rounded-xl mt-4">
-          <p className="text-red-400">{results.error}</p>
+      {history.length > 0 && (
+        <div className="bg-gray-900 p-5 rounded-xl">
+          <div className="flex items-center gap-2 mb-4">
+            <Clock size={18} className="text-gray-400" />
+            <h3 className="font-semibold">Historique des optimisations</h3>
+          </div>
+          <div className="overflow-auto">
+            <table className="w-full text-sm">
+              <thead><tr className="text-gray-400 border-b border-gray-800">
+                <th className="text-left py-2 px-2">Date</th>
+                <th className="px-2">Mode</th>
+                <th className="px-2">Paire</th>
+                <th className="px-2">Strategie</th>
+                <th className="px-2">TF</th>
+                <th className="px-2">SL</th>
+                <th className="px-2">TP</th>
+                <th className="px-2">Win Rate</th>
+                <th className="px-2">PnL</th>
+                <th className="px-2">Combos</th>
+                <th className="px-2">Actions</th>
+              </tr></thead>
+              <tbody>
+                {history.map((h) => (
+                  <tr key={h.id} className="border-b border-gray-800">
+                    <td className="py-2 px-2 text-gray-400 text-xs">{h.created_at?.split('T')[0]}</td>
+                    <td className="px-2 text-xs">{h.mode}</td>
+                    <td className="px-2">{h.symbol}</td>
+                    <td className="px-2 text-purple-400">{h.best_strategy}</td>
+                    <td className="px-2">{h.best_timeframe || h.timeframe}</td>
+                    <td className="px-2">{(h.best_sl * 100).toFixed(1)}%</td>
+                    <td className="px-2">{(h.best_tp * 100).toFixed(1)}%</td>
+                    <td className={`px-2 ${h.best_win_rate >= 0.5 ? 'text-green-400' : 'text-yellow-400'}`}>{(h.best_win_rate * 100).toFixed(1)}%</td>
+                    <td className={`px-2 font-medium ${h.best_pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>{h.best_pnl} USDT</td>
+                    <td className="px-2 text-gray-400">{h.combinations_tested}</td>
+                    <td className="px-2">
+                      <div className="flex gap-1">
+                        <button onClick={() => loadSaved(h.id)} className="px-2 py-1 bg-blue-600 rounded text-xs">Voir</button>
+                        <button onClick={() => deleteSaved(h.id)} className="px-2 py-1 bg-red-600 rounded text-xs">X</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

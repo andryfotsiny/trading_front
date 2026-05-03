@@ -11,6 +11,28 @@ const STRATEGY_DESCRIPTIONS: Record<string, string> = {
   grid_trading: "BUY/SELL automatique sur une grille de prix dans un range",
   dca_bot: "BUY quand le prix baisse sous la SMA (accumulation progressive)",
   rsi_macd_combo: "BUY/SELL quand RSI + MACD + Bollinger confirment ensemble",
+  mtf_confluence: "HTF = direction du trend, LTF = entree precise. Ne trade que dans le sens du HTF",
+  bos_structure: "Detecte les Break of Structure (cassure de plus haut/bas). Trading institutionnel",
+  liquidity_sweep: "Detecte les pieges (sweep de liquidite) puis entre en sens inverse. Smart Money",
+}
+
+const STRATEGY_LEVELS: Record<string, string> = {
+  rsi_oversold: "Debutant",
+  macd_crossover: "Debutant",
+  sma_crossover: "Debutant",
+  bollinger_bounce: "Debutant",
+  grid_trading: "Intermediaire",
+  dca_bot: "Intermediaire",
+  rsi_macd_combo: "Intermediaire",
+  mtf_confluence: "Avance",
+  bos_structure: "Avance",
+  liquidity_sweep: "Avance",
+}
+
+const LEVEL_COLORS: Record<string, string> = {
+  "Debutant": "text-green-400",
+  "Intermediaire": "text-yellow-400",
+  "Avance": "text-purple-400",
 }
 
 export default function Strategies() {
@@ -57,6 +79,9 @@ export default function Strategies() {
     fetchStrategies()
   }
 
+  const level = STRATEGY_LEVELS[form.strategy_type] || ''
+  const levelColor = LEVEL_COLORS[level] || ''
+
   return (
     <div>
       <h2 className="text-2xl font-bold mb-6">Strategies</h2>
@@ -72,7 +97,10 @@ export default function Strategies() {
               {types.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
             {form.strategy_type && (
-              <p className="text-xs text-gray-500 px-1">{STRATEGY_DESCRIPTIONS[form.strategy_type] || ''}</p>
+              <div className="px-1">
+                <p className="text-xs text-gray-500">{STRATEGY_DESCRIPTIONS[form.strategy_type] || ''}</p>
+                {level && <p className={`text-xs mt-1 ${levelColor}`}>Niveau: {level}</p>}
+              </div>
             )}
             <select value={form.symbol} onChange={(e) => setForm({ ...form, symbol: e.target.value })}
               className="w-full p-3 bg-gray-800 rounded-lg border border-gray-700 outline-none">
@@ -105,7 +133,12 @@ export default function Strategies() {
                 <div key={s.id} className="bg-gray-800 p-4 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium">{s.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{s.name}</p>
+                        <span className={`text-xs ${LEVEL_COLORS[STRATEGY_LEVELS[s.strategy_type]] || ''}`}>
+                          {STRATEGY_LEVELS[s.strategy_type] || ''}
+                        </span>
+                      </div>
                       <p className="text-sm text-gray-400">{s.strategy_type} - {s.symbol} - {s.timeframe}</p>
                       <p className="text-xs text-gray-600 mt-1">{STRATEGY_DESCRIPTIONS[s.strategy_type] || ''}</p>
                     </div>
