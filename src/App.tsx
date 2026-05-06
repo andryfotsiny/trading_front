@@ -11,6 +11,7 @@ import Trading from './components/Trading/Trading'
 import Strategies from './components/Strategies/Strategies'
 import Backtest from './components/Backtest/Backtest'
 import Optimizer from './components/Optimizer/Optimizer'
+import Calendar from './components/Calendar/Calendar'
 import History from './components/Trading/History'
 import Settings from './components/Settings/Settings'
 
@@ -39,6 +40,7 @@ export default function App() {
           <Route path="strategies" element={<Strategies />} />
           <Route path="backtest" element={<Backtest />} />
           <Route path="optimizer" element={<Optimizer />} />
+          <Route path="calendar" element={<Calendar />} />
           <Route path="history" element={<History />} />
           <Route path="settings" element={<Settings />} />
         </Route>
