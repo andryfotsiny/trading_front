@@ -1,27 +1,23 @@
-# Etape 2 — Design system + couleurs modernes
+# Etape 3 — Skeleton loading + spinners
 
 ## Fichiers à copier
 
 ```
-etape2/components/Layout/AppLayout.tsx  → src/components/Layout/AppLayout.tsx
-etape2/components/Layout/Sidebar.tsx    → src/components/Layout/Sidebar.tsx
-etape2/components/UI/Toast.tsx          → src/components/UI/Toast.tsx
-etape2/components/UI/Components.tsx     → src/components/UI/Components.tsx  (nouveau)
-etape2/components/Dashboard/Dashboard.tsx → src/components/Dashboard/Dashboard.tsx
+etape3/components/UI/Skeleton.tsx          → src/components/UI/Skeleton.tsx  (nouveau)
+etape3/components/Dashboard/Dashboard.tsx  → src/components/Dashboard/Dashboard.tsx
+etape3/components/Bot/Bot.tsx              → src/components/Bot/Bot.tsx
 ```
 
 ## Ce qui change
 
-- Fond `zinc-950` au lieu de `gray-950`
-- Sidebar avec accent `cyan-400` + border subtile
-- Cards avec `border-zinc-800`
-- Gains en `emerald-400`, pertes en `rose-400`
-- Composants réutilisables : `Card`, `StatCard`, `Badge`, `Button`, `Table`, `PageHeader`
-- Toast redesigné avec bordures colorées
+- `Skeleton.tsx` — composants réutilisables : `Skeleton`, `SkeletonCard`, `SkeletonTable`, `SkeletonList`
+- `Dashboard` — skeletons sur toutes les cards et tableaux pendant le chargement
+- `Bot` — skeletons sur les cards de statut et la liste des stratégies
+- Spinners sur les boutons en action (Fermer, Vérifier, Lancer)
 
 ## Commit
 
 ```bash
 git add .
-git commit -m "feat: design system zinc/cyan + composants UI"
+git commit -m "feat: skeleton loading + spinners"
 ```
