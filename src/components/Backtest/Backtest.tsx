@@ -1,6 +1,11 @@
-// src/components/Backtest/Backtest.tsx
 import { useState, useEffect } from 'react'
 import api from '../../services/api'
+import { Card, Badge, Button, Table, PageHeader } from '../UI/Components'
+import { SkeletonTable } from '../UI/Skeleton'
+import { Trash2 } from 'lucide-react'
+
+const inputCls = 'w-full px-3 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-zinc-100 outline-none focus:border-cyan-500/50 transition-colors'
+const labelCls = 'text-xs text-zinc-500 mb-1 block'
 
 export default function Backtest() {
   const [strategy, setStrategy] = useState('rsi_macd_combo')
@@ -54,199 +59,156 @@ export default function Backtest() {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-6">Backtest</h2>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-gray-900 p-5 rounded-xl">
-          <h3 className="font-semibold mb-4">Lancer un backtest</h3>
+      <PageHeader title="Backtest" sub="Testez vos stratégies sur données historiques" />
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <Card>
+          <h3 className="font-semibold text-zinc-100 mb-4">Lancer un backtest</h3>
           <div className="space-y-3">
             <div>
-              <label className="text-xs text-gray-400 mb-1 block">Strategie</label>
-              <select value={strategy} onChange={(e) => setStrategy(e.target.value)}
-                className="w-full p-3 bg-gray-800 rounded-lg border border-gray-700 outline-none">
+              <label className={labelCls}>Strategie</label>
+              <select value={strategy} onChange={(e) => setStrategy(e.target.value)} className={inputCls}>
                 {types.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-xs text-gray-400 mb-1 block">Paire</label>
-              <select value={symbol} onChange={(e) => setSymbol(e.target.value)}
-                className="w-full p-3 bg-gray-800 rounded-lg border border-gray-700 outline-none">
+              <label className={labelCls}>Paire</label>
+              <select value={symbol} onChange={(e) => setSymbol(e.target.value)} className={inputCls}>
                 <option>BTC/USDT</option><option>ETH/USDT</option><option>BNB/USDT</option>
               </select>
             </div>
             <div>
-              <label className="text-xs text-gray-400 mb-1 block">Timeframe</label>
-              <select value={timeframe} onChange={(e) => setTimeframe(e.target.value)}
-                className="w-full p-3 bg-gray-800 rounded-lg border border-gray-700 outline-none">
-                <option value="1m">1 minute</option>
-                <option value="5m">5 minutes</option>
-                <option value="15m">15 minutes</option>
-                <option value="1h">1 heure</option>
-                <option value="4h">4 heures</option>
+              <label className={labelCls}>Timeframe</label>
+              <select value={timeframe} onChange={(e) => setTimeframe(e.target.value)} className={inputCls}>
+                {['1m','5m','15m','1h','4h'].map((t) => <option key={t} value={t}>{t === '1h' ? '1 heure' : t === '4h' ? '4 heures' : t}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-xs text-gray-400 mb-1 block">Nombre de bougies (plus = plus de donnees historiques)</label>
-              <input type="number" value={limit} onChange={(e) => setLimit(+e.target.value)}
-                className="w-full p-3 bg-gray-800 rounded-lg border border-gray-700 outline-none" />
+              <label className={labelCls}>Nombre de bougies</label>
+              <input type="number" value={limit} onChange={(e) => setLimit(+e.target.value)} className={inputCls} />
             </div>
             <div>
-              <label className="text-xs text-gray-400 mb-1 block">Capital de depart (USDT)</label>
-              <input type="number" value={capital} onChange={(e) => setCapital(+e.target.value)}
-                className="w-full p-3 bg-gray-800 rounded-lg border border-gray-700 outline-none" />
+              <label className={labelCls}>Capital de depart (USDT)</label>
+              <input type="number" value={capital} onChange={(e) => setCapital(+e.target.value)} className={inputCls} />
             </div>
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <label className="text-xs text-gray-400 mb-1 block">Risque %</label>
-                <input type="number" step="0.01" value={riskPct} onChange={(e) => setRiskPct(+e.target.value)}
-                  className="w-full p-3 bg-gray-800 rounded-lg border border-gray-700 outline-none text-sm" />
+                <label className={labelCls}>Risque %</label>
+                <input type="number" step="0.01" value={riskPct} onChange={(e) => setRiskPct(+e.target.value)} className={inputCls} />
               </div>
               <div>
-                <label className="text-xs text-gray-400 mb-1 block">Stop-Loss %</label>
-                <input type="number" step="0.01" value={slPct} onChange={(e) => setSlPct(+e.target.value)}
-                  className="w-full p-3 bg-gray-800 rounded-lg border border-gray-700 outline-none text-sm" />
+                <label className={labelCls}>Stop-Loss %</label>
+                <input type="number" step="0.01" value={slPct} onChange={(e) => setSlPct(+e.target.value)} className={inputCls} />
               </div>
               <div>
-                <label className="text-xs text-gray-400 mb-1 block">Take-Profit %</label>
-                <input type="number" step="0.01" value={tpPct} onChange={(e) => setTpPct(+e.target.value)}
-                  className="w-full p-3 bg-gray-800 rounded-lg border border-gray-700 outline-none text-sm" />
+                <label className={labelCls}>Take-Profit %</label>
+                <input type="number" step="0.01" value={tpPct} onChange={(e) => setTpPct(+e.target.value)} className={inputCls} />
               </div>
             </div>
-            <p className="text-xs text-gray-600">SL {(slPct*100).toFixed(0)}% = ferme si perd {(slPct*100).toFixed(0)}% | TP {(tpPct*100).toFixed(0)}% = ferme si gagne {(tpPct*100).toFixed(0)}%</p>
-            <button onClick={runBacktest} disabled={loading}
-              className="w-full p-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium disabled:opacity-50">
-              {loading ? 'En cours...' : 'Lancer le backtest'}
-            </button>
+            <p className="text-xs text-zinc-600">SL {(slPct*100).toFixed(0)}% = ferme si perd {(slPct*100).toFixed(0)}% | TP {(tpPct*100).toFixed(0)}% = ferme si gagne {(tpPct*100).toFixed(0)}%</p>
+            <Button onClick={runBacktest} disabled={loading} className="w-full">
+              {loading ? 'Calcul en cours...' : 'Lancer le backtest'}
+            </Button>
           </div>
-        </div>
+        </Card>
 
-        <div className="lg:col-span-2 bg-gray-900 p-5 rounded-xl">
-          <h3 className="font-semibold mb-4">Resultat</h3>
-          {result ? (
-            result.error ? <p className="text-red-400">{result.error}</p> : (
+        <div className="lg:col-span-2">
+          <Card className="h-full">
+            <h3 className="font-semibold text-zinc-100 mb-4">Resultat</h3>
+            {!result ? (
+              <p className="text-zinc-600 text-sm">Lance un backtest pour voir les resultats</p>
+            ) : result.error ? (
+              <div className="bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm rounded-lg p-4">{result.error}</div>
+            ) : (
               <div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                  <div className="bg-gray-800 p-3 rounded-lg">
-                    <p className="text-xs text-gray-400">PnL</p>
-                    <p className={`font-bold ${result.total_pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>{result.total_pnl} USDT</p>
-                  </div>
-                  <div className="bg-gray-800 p-3 rounded-lg">
-                    <p className="text-xs text-gray-400">Win rate</p>
-                    <p className={`font-bold ${result.win_rate >= 0.5 ? 'text-green-400' : 'text-red-400'}`}>{(result.win_rate * 100).toFixed(1)}%</p>
-                  </div>
-                  <div className="bg-gray-800 p-3 rounded-lg">
-                    <p className="text-xs text-gray-400">Trades (TP/SL)</p>
-                    <p className="font-bold"><span className="text-green-400">{result.winning_trades}</span> / <span className="text-red-400">{result.losing_trades}</span></p>
-                  </div>
-                  <div className="bg-gray-800 p-3 rounded-lg">
-                    <p className="text-xs text-gray-400">Max Drawdown</p>
-                    <p className="font-bold">{(result.max_drawdown * 100).toFixed(2)}%</p>
-                  </div>
-                  <div className="bg-gray-800 p-3 rounded-lg">
-                    <p className="text-xs text-gray-400">Capital final</p>
-                    <p className={`font-bold ${result.final_capital >= capital ? 'text-green-400' : 'text-red-400'}`}>{result.final_capital} USDT</p>
-                  </div>
-                  <div className="bg-gray-800 p-3 rounded-lg">
-                    <p className="text-xs text-gray-400">Sharpe Ratio</p>
-                    <p className="font-bold">{result.sharpe_ratio ?? '-'}</p>
-                  </div>
-                  <div className="bg-gray-800 p-3 rounded-lg">
-                    <p className="text-xs text-gray-400">Profit Factor</p>
-                    <p className={`font-bold ${result.profit_factor >= 1 ? 'text-green-400' : 'text-red-400'}`}>{result.profit_factor ?? '-'}</p>
-                  </div>
-                  <div className="bg-gray-800 p-3 rounded-lg">
-                    <p className="text-xs text-gray-400">Gain moy / Perte moy</p>
-                    <p className="font-bold text-sm"><span className="text-green-400">{result.avg_win}</span> / <span className="text-red-400">{result.avg_loss}</span></p>
-                  </div>
-                </div>
-                {result.trades_detail && result.trades_detail.length > 0 && (
-                  <div className="mt-3">
-                    <p className="text-sm text-gray-400 mb-2">Detail des {result.trades_detail.length} trades</p>
-                    <div className="max-h-60 overflow-auto">
-                      <table className="w-full text-xs">
-                        <thead><tr className="text-gray-500 border-b border-gray-700">
-                          <th className="text-left py-1">#</th><th>Side</th><th>Entree</th><th>Sortie</th><th>PnL</th><th>Raison</th>
-                        </tr></thead>
-                        <tbody>
-                          {result.trades_detail.map((t: any, i: number) => (
-                            <tr key={i} className="border-b border-gray-800">
-                              <td className="py-1 text-gray-500">{i+1}</td>
-                              <td className={t.side === 'BUY' ? 'text-green-400' : 'text-red-400'}>{t.side}</td>
-                              <td>${t.entry_price}</td>
-                              <td>${t.exit_price}</td>
-                              <td className={t.pnl >= 0 ? 'text-green-400' : 'text-red-400'}>{t.pnl}</td>
-                              <td className={t.reason === 'take_profit' ? 'text-green-400' : t.reason === 'stop_loss' ? 'text-red-400' : 'text-gray-400'}>{t.reason}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                  {[
+                    { label: 'Capital final', value: `${result.final_capital} USDT`, positive: result.final_capital >= capital },
+                    { label: 'PnL', value: `${result.total_pnl > 0 ? '+' : ''}${result.total_pnl} USDT`, positive: result.total_pnl >= 0 },
+                    { label: 'Win Rate', value: `${(result.win_rate * 100).toFixed(1)}%`, positive: result.win_rate >= 0.5 },
+                    { label: 'Trades', value: result.total_trades, positive: true },
+                    { label: 'Max Drawdown', value: `${(result.max_drawdown * 100).toFixed(2)}%`, positive: result.max_drawdown < 0.1 },
+                    { label: 'Profit Factor', value: result.profit_factor ?? '-', positive: (result.profit_factor || 0) >= 1 },
+                    { label: 'Gain moy', value: result.avg_win, positive: true },
+                    { label: 'Perte moy', value: result.avg_loss, positive: false },
+                  ].map((item) => (
+                    <div key={item.label} className="bg-zinc-800 rounded-lg p-3">
+                      <p className="text-xs text-zinc-500 mb-1">{item.label}</p>
+                      <p className={`font-bold text-sm ${item.positive ? 'text-emerald-400' : 'text-rose-400'}`}>{item.value}</p>
                     </div>
+                  ))}
+                </div>
+                {result.trades_detail?.length > 0 && (
+                  <div className="max-h-60 overflow-auto">
+                    <Table headers={['#', 'Side', 'Entree', 'Sortie', 'PnL', 'Raison']}>
+                      {result.trades_detail.map((t: any, i: number) => (
+                        <tr key={i}>
+                          <td className="py-2 px-2 text-zinc-500 text-xs">{i+1}</td>
+                          <td className="py-2 px-2 text-center"><Badge variant={t.side === 'BUY' ? 'success' : 'danger'}>{t.side}</Badge></td>
+                          <td className="py-2 px-2 text-center text-zinc-300 text-xs font-mono">${t.entry_price}</td>
+                          <td className="py-2 px-2 text-center text-zinc-300 text-xs font-mono">${t.exit_price}</td>
+                          <td className={`py-2 px-2 text-center text-xs font-mono ${t.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{t.pnl}</td>
+                          <td className="py-2 px-2 text-center"><Badge variant={t.reason === 'take_profit' ? 'success' : t.reason === 'stop_loss' ? 'danger' : 'neutral'}>{t.reason}</Badge></td>
+                        </tr>
+                      ))}
+                    </Table>
                   </div>
                 )}
               </div>
-            )
-          ) : <p className="text-gray-500">Lance un backtest pour voir les resultats</p>}
+            )}
+          </Card>
         </div>
       </div>
 
       {history.length > 0 && (
-        <div className="bg-gray-900 p-5 rounded-xl mt-6">
-          <h3 className="font-semibold mb-3">Historique backtests</h3>
-          <table className="w-full text-sm">
-            <thead><tr className="text-gray-400 border-b border-gray-800">
-              <th className="text-left py-2">Strategie</th><th>Paire</th><th>Trades</th><th>Win rate</th><th>PnL</th><th>Drawdown</th><th>Actions</th>
-            </tr></thead>
-            <tbody>
-              {history.map((b) => (
-                <tr key={b.id} className="border-b border-gray-800">
-                  <td className="py-2">{b.strategy_type}</td>
-                  <td>{b.symbol}</td>
-                  <td>{b.total_trades}</td>
-                  <td className={b.win_rate >= 0.5 ? 'text-green-400' : 'text-red-400'}>{(b.win_rate * 100).toFixed(1)}%</td>
-                  <td className={b.total_pnl >= 0 ? 'text-green-400' : 'text-red-400'}>{b.total_pnl} USDT</td>
-                  <td>{(b.max_drawdown * 100).toFixed(2)}%</td>
-                  <td>
-                    <div className="flex gap-1">
-                      <button onClick={() => viewDetail(b.id)} className="px-2 py-1 bg-blue-600 rounded text-xs">Detail</button>
-                      <button onClick={() => deleteBacktest(b.id)} className="px-2 py-1 bg-red-600 rounded text-xs">X</button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Card>
+          <h3 className="font-semibold text-zinc-100 mb-4">Historique backtests</h3>
+          <Table headers={['Strategie', 'Paire', 'Trades', 'Win rate', 'PnL', 'Drawdown', 'Actions']}>
+            {history.map((b: any) => (
+              <tr key={b.id}>
+                <td className="py-3 px-2 text-zinc-100 text-sm font-medium">{b.strategy_type}</td>
+                <td className="py-3 px-2 text-center text-zinc-300 text-sm">{b.symbol}</td>
+                <td className="py-3 px-2 text-center text-zinc-300 text-sm">{b.total_trades}</td>
+                <td className="py-3 px-2 text-center"><Badge variant={b.win_rate >= 0.5 ? 'success' : 'danger'}>{(b.win_rate * 100).toFixed(1)}%</Badge></td>
+                <td className={`py-3 px-2 text-center text-sm font-mono ${b.total_pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{b.total_pnl > 0 ? '+' : ''}{b.total_pnl} USDT</td>
+                <td className="py-3 px-2 text-center text-zinc-400 text-sm">{(b.max_drawdown * 100).toFixed(2)}%</td>
+                <td className="py-3 px-2 text-center">
+                  <div className="flex gap-1 justify-center">
+                    <Button onClick={() => viewDetail(b.id)} variant="ghost" size="sm">Detail</Button>
+                    <button onClick={() => deleteBacktest(b.id)} className="p-1.5 text-zinc-600 hover:text-rose-400 transition-colors"><Trash2 size={14} /></button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </Table>
+        </Card>
       )}
 
       {detail && (
-        <div className="bg-gray-900 p-5 rounded-xl mt-6">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold">Detail backtest #{detail.id} - {detail.strategy_type}</h3>
-            <button onClick={() => setDetail(null)} className="text-gray-400 hover:text-white">Fermer</button>
+        <Card className="mt-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-zinc-100">Detail backtest #{detail.id} — {detail.strategy_type}</h3>
+            <button onClick={() => setDetail(null)} className="text-zinc-500 hover:text-zinc-300 text-sm">Fermer</button>
           </div>
           {detail.trades_detail && (
             <div className="max-h-80 overflow-auto">
-              <table className="w-full text-xs">
-                <thead><tr className="text-gray-500 border-b border-gray-700">
-                  <th className="text-left py-1">#</th><th>Side</th><th>Entree</th><th>Sortie</th><th>Quantite</th><th>PnL</th><th>PnL %</th><th>Raison</th>
-                </tr></thead>
-                <tbody>
-                  {detail.trades_detail.map((t: any, i: number) => (
-                    <tr key={i} className="border-b border-gray-800">
-                      <td className="py-1 text-gray-500">{i+1}</td>
-                      <td className={t.side === 'BUY' ? 'text-green-400' : 'text-red-400'}>{t.side}</td>
-                      <td>${t.entry_price}</td>
-                      <td>${t.exit_price}</td>
-                      <td>{t.quantity}</td>
-                      <td className={t.pnl >= 0 ? 'text-green-400' : 'text-red-400'}>{t.pnl}</td>
-                      <td className={t.pnl_pct >= 0 ? 'text-green-400' : 'text-red-400'}>{t.pnl_pct}%</td>
-                      <td className={t.reason === 'take_profit' ? 'text-green-400' : t.reason === 'stop_loss' ? 'text-red-400' : 'text-gray-400'}>{t.reason}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <Table headers={['#', 'Side', 'Entree', 'Sortie', 'Qté', 'PnL', 'PnL %', 'Raison']}>
+                {detail.trades_detail.map((t: any, i: number) => (
+                  <tr key={i}>
+                    <td className="py-2 px-2 text-zinc-500 text-xs">{i+1}</td>
+                    <td className="py-2 px-2 text-center"><Badge variant={t.side === 'BUY' ? 'success' : 'danger'}>{t.side}</Badge></td>
+                    <td className="py-2 px-2 text-center text-zinc-300 text-xs font-mono">${t.entry_price}</td>
+                    <td className="py-2 px-2 text-center text-zinc-300 text-xs font-mono">${t.exit_price}</td>
+                    <td className="py-2 px-2 text-center text-zinc-400 text-xs">{t.quantity}</td>
+                    <td className={`py-2 px-2 text-center text-xs font-mono ${t.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{t.pnl}</td>
+                    <td className={`py-2 px-2 text-center text-xs ${t.pnl_pct >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{t.pnl_pct}%</td>
+                    <td className="py-2 px-2 text-center"><Badge variant={t.reason === 'take_profit' ? 'success' : t.reason === 'stop_loss' ? 'danger' : 'neutral'}>{t.reason}</Badge></td>
+                  </tr>
+                ))}
+              </Table>
             </div>
           )}
-        </div>
+        </Card>
       )}
     </div>
   )

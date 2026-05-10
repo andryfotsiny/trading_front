@@ -1,32 +1,29 @@
-# Etape 7 — Page 404 + token expiré + sécurité JWT + Login/Register redesignés
+# Etape 8 — Uniformisation zinc toutes les pages restantes
 
 ## Fichiers à copier
 
 ```
-etape7/App.tsx                        → src/App.tsx
-etape7/services/api.ts                → src/services/api.ts
-etape7/store/index.ts                 → src/store/index.ts
-etape7/components/UI/NotFound.tsx     → src/components/UI/NotFound.tsx  (nouveau)
-etape7/components/Auth/Login.tsx      → src/components/Auth/Login.tsx
-etape7/components/Auth/Register.tsx   → src/components/Auth/Register.tsx
+etape8/components/Backtest/Backtest.tsx   → src/components/Backtest/Backtest.tsx
+etape8/components/Calendar/Calendar.tsx   → src/components/Calendar/Calendar.tsx
+etape8/components/Settings/Settings.tsx   → src/components/Settings/Settings.tsx
+etape8/components/Trading/Trading.tsx     → src/components/Trading/Trading.tsx
 ```
 
 ## Ce qui change
 
-- `App.tsx` — route `*` → page 404 pour toute URL inconnue
-- `NotFound.tsx` — page 404 moderne avec lien retour dashboard
-- `api.ts` — token lu depuis Zustand (plus de localStorage direct) + toast "Session expirée" avant redirect
-- `store/index.ts` — logout nettoie tout le state + try/catch sur localStorage
-- `Login.tsx` — redesigné avec zinc + spinner sur le bouton
-- `Register.tsx` — redesigné avec zinc + spinner sur le bouton
+- Tous les `gray-800/900/700` remplacés par `zinc-800/900/700`
+- Tous les inputs uniformisés avec le même style
+- Tableaux avec le composant `Table` réutilisable
+- Badges `Badge` pour Side, impact, raison
+- Boutons `Button` uniformes
+- Cards `Card` avec `border-zinc-800`
 
-## Commit final
+## Commit
 
 ```bash
 git add .
-git commit -m "feat: page 404 + session expiree + login redesigne"
+git commit -m "feat: uniformisation zinc toutes pages"
 git push
 
-cd ~/Projects/trading_bot
 ./deploy.sh frontend
 ```
