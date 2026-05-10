@@ -1,6 +1,5 @@
-// src/components/UI/Toast.tsx
 import { useEffect } from 'react'
-import { AlertTriangle, CheckCircle, XCircle, Info, X } from 'lucide-react'
+import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react'
 
 export interface ToastData {
   id: string
@@ -8,41 +7,34 @@ export interface ToastData {
   message: string
 }
 
-const icons = {
-  success: CheckCircle,
-  error: XCircle,
-  warning: AlertTriangle,
-  info: Info,
-}
-
-const colors = {
-  success: 'bg-green-900 border-green-600 text-green-200',
-  error: 'bg-red-900 border-red-600 text-red-200',
-  warning: 'bg-yellow-900 border-yellow-600 text-yellow-200',
-  info: 'bg-blue-900 border-blue-600 text-blue-200',
+const config = {
+  success: { icon: CheckCircle, cls: 'bg-zinc-900 border-emerald-500/30 text-emerald-400' },
+  error: { icon: XCircle, cls: 'bg-zinc-900 border-rose-500/30 text-rose-400' },
+  warning: { icon: AlertTriangle, cls: 'bg-zinc-900 border-amber-500/30 text-amber-400' },
+  info: { icon: Info, cls: 'bg-zinc-900 border-cyan-500/30 text-cyan-400' },
 }
 
 export function Toast({ toast, onClose }: { toast: ToastData; onClose: () => void }) {
-  const Icon = icons[toast.type]
+  const { icon: Icon, cls } = config[toast.type]
 
   useEffect(() => {
-    const timer = setTimeout(onClose, 8000)
-    return () => clearTimeout(timer)
+    const t = setTimeout(onClose, 6000)
+    return () => clearTimeout(t)
   }, [])
 
   return (
-    <div className={`flex items-start gap-3 p-4 rounded-lg border ${colors[toast.type]} shadow-lg max-w-md animate-slide-in`}>
-      <Icon size={20} className="mt-0.5 shrink-0" />
-      <p className="text-sm flex-1">{toast.message}</p>
-      <button onClick={onClose} className="shrink-0 opacity-60 hover:opacity-100">
-        <X size={16} />
+    <div className={`flex items-start gap-3 p-4 rounded-xl border ${cls} shadow-2xl max-w-sm backdrop-blur-sm`}>
+      <Icon size={18} className="mt-0.5 shrink-0" />
+      <p className="text-sm text-zinc-200 flex-1">{toast.message}</p>
+      <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300 shrink-0">
+        <X size={15} />
       </button>
     </div>
   )
 }
 
 export function ToastContainer({ toasts, onClose }: { toasts: ToastData[]; onClose: (id: string) => void }) {
-  if (toasts.length === 0) return null
+  if (!toasts.length) return null
   return (
     <div className="fixed top-4 right-4 z-50 space-y-2">
       {toasts.map((t) => (

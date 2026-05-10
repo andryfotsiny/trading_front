@@ -1,4 +1,3 @@
-// src/components/Layout/Sidebar.tsx
 import { Link, useLocation } from 'react-router-dom'
 import { useStore } from '../../store'
 import { LayoutDashboard, TrendingUp, BarChart3, History, Bot, LogOut, Cpu, Settings, Search, CalendarDays } from 'lucide-react'
@@ -21,29 +20,41 @@ export default function Sidebar() {
   const user = useStore((s) => s.user)
 
   return (
-    <div className="w-64 bg-gray-900 min-h-screen p-4 flex flex-col">
-      <h1 className="text-xl font-bold mb-8 text-center">Trading Bot</h1>
-      <nav className="flex-1 space-y-2">
+    <div className="w-60 bg-zinc-900 border-r border-zinc-800 min-h-screen p-4 flex flex-col shrink-0">
+      <div className="mb-8 px-2">
+        <h1 className="text-lg font-bold text-cyan-400 tracking-tight">Trading Bot</h1>
+        <p className="text-xs text-zinc-500 mt-0.5">Paper Trading</p>
+      </div>
+
+      <nav className="flex-1 space-y-1">
         {links.map((link) => {
           const Icon = link.icon
           const active = location.pathname === link.to
           return (
             <Link
-              key={link.to} to={link.to}
-              className={`flex items-center gap-3 p-3 rounded-lg transition ${
-                active ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+              key={link.to}
+              to={link.to}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
+                active
+                  ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
+                  : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100'
               }`}
             >
-              <Icon size={20} />
+              <Icon size={18} />
               {link.label}
             </Link>
           )
         })}
       </nav>
-      <div className="border-t border-gray-800 pt-4">
-        <p className="text-gray-500 text-sm mb-2">{user?.username}</p>
-        <button onClick={logout} className="flex items-center gap-2 text-gray-400 hover:text-red-400 text-sm">
-          <LogOut size={16} /> Deconnexion
+
+      <div className="border-t border-zinc-800 pt-4 mt-4">
+        <p className="text-zinc-500 text-xs px-2 mb-3 truncate">{user?.email}</p>
+        <button
+          onClick={logout}
+          className="flex items-center gap-2 text-zinc-500 hover:text-rose-400 text-sm px-2 py-1.5 w-full rounded-lg hover:bg-zinc-800 transition-all"
+        >
+          <LogOut size={16} />
+          Deconnexion
         </button>
       </div>
     </div>
