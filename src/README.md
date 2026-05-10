@@ -1,22 +1,32 @@
-# Etape 6 — Prix animé + modal confirmation
+# Etape 7 — Page 404 + token expiré + sécurité JWT + Login/Register redesignés
 
 ## Fichiers à copier
 
 ```
-etape6/components/UI/Modal.tsx              → src/components/UI/Modal.tsx  (nouveau)
-etape6/hooks/useAnimatedPrice.ts            → src/hooks/useAnimatedPrice.ts  (nouveau)
-etape6/components/Dashboard/Dashboard.tsx  → src/components/Dashboard/Dashboard.tsx
+etape7/App.tsx                        → src/App.tsx
+etape7/services/api.ts                → src/services/api.ts
+etape7/store/index.ts                 → src/store/index.ts
+etape7/components/UI/NotFound.tsx     → src/components/UI/NotFound.tsx  (nouveau)
+etape7/components/Auth/Login.tsx      → src/components/Auth/Login.tsx
+etape7/components/Auth/Register.tsx   → src/components/Auth/Register.tsx
 ```
 
 ## Ce qui change
 
-- `Modal.tsx` — composant modal réutilisable avec overlay + confirmation
-- `useAnimatedPrice.ts` — hook qui détecte si le prix monte/descend et applique un flash de couleur
-- `Dashboard.tsx` — prix BTC flash vert/rouge + modal de confirmation avant fermeture de trade avec PnL estimé
+- `App.tsx` — route `*` → page 404 pour toute URL inconnue
+- `NotFound.tsx` — page 404 moderne avec lien retour dashboard
+- `api.ts` — token lu depuis Zustand (plus de localStorage direct) + toast "Session expirée" avant redirect
+- `store/index.ts` — logout nettoie tout le state + try/catch sur localStorage
+- `Login.tsx` — redesigné avec zinc + spinner sur le bouton
+- `Register.tsx` — redesigné avec zinc + spinner sur le bouton
 
-## Commit
+## Commit final
 
 ```bash
 git add .
-git commit -m "feat: prix anime + modal confirmation fermeture trade"
+git commit -m "feat: page 404 + session expiree + login redesigne"
+git push
+
+cd ~/Projects/trading_bot
+./deploy.sh frontend
 ```

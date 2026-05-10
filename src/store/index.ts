@@ -18,9 +18,17 @@ interface AppState {
   fetchIndicators: (base: string, quote: string) => Promise<void>
 }
 
+const getStoredToken = () => {
+  try {
+    return localStorage.getItem('token')
+  } catch {
+    return null
+  }
+}
+
 export const useStore = create<AppState>((set) => ({
   user: null,
-  token: localStorage.getItem('token'),
+  token: getStoredToken(),
   trades: [],
   strategies: [],
   indicators: null,
@@ -31,7 +39,7 @@ export const useStore = create<AppState>((set) => ({
     form.append('username', email)
     form.append('password', password)
     const { data } = await api.post('/auth/login', form)
-    localStorage.setItem('token', data.access_token)
+    try { localStorage.setItem('token', data.access_token) } catch {}
     set({ token: data.access_token })
   },
 
@@ -40,8 +48,8 @@ export const useStore = create<AppState>((set) => ({
   },
 
   logout: () => {
-    localStorage.removeItem('token')
-    set({ user: null, token: null })
+    try { localStorage.removeItem('token') } catch {}
+    set({ user: null, token: null, trades: [], strategies: [], indicators: null })
   },
 
   fetchMe: async () => {

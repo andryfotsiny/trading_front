@@ -14,6 +14,7 @@ import Optimizer from './components/Optimizer/Optimizer'
 import Calendar from './components/Calendar/Calendar'
 import History from './components/Trading/History'
 import Settings from './components/Settings/Settings'
+import NotFound from './components/UI/NotFound'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -53,7 +54,9 @@ export default function App() {
             <Route path="calendar" element={<Calendar />} />
             <Route path="history" element={<History />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="*" element={<NotFound />} />
           </Route>
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>
