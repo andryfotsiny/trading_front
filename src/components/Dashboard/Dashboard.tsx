@@ -1,16 +1,13 @@
+import { useState } from 'react'
 import { DollarSign, TrendingUp, TrendingDown, BarChart3, Trophy, Activity } from 'lucide-react'
 import { useToastStore } from '../../store/toastStore'
 import { StatCard, Card, Badge, Button, Table, PageHeader } from '../UI/Components'
 import { SkeletonCard, SkeletonTable, Skeleton } from '../UI/Skeleton'
+import { Modal } from '../UI/Modal'
+import { useAnimatedPrice } from '../../hooks/useAnimatedPrice'
 import {
-  useDashboardStats,
-  useStrategyStats,
-  useOpenTrades,
-  useBtcPrice,
-  useBalance,
-  useIndicators,
-  useCloseTrade,
-  useCheckExits,
+  useDashboardStats, useStrategyStats, useOpenTrades,
+  useBtcPrice, useBalance, useIndicators, useCloseTrade, useCheckExits,
 } from '../../hooks/useTrading'
 
 export default function Dashboard() {
@@ -23,12 +20,17 @@ export default function Dashboard() {
   const { data: indicators, isLoading: indicatorsLoading } = useIndicators()
   const closeTrade = useCloseTrade()
   const checkExits = useCheckExits()
+  const { flashClass } = useAnimatedPrice(price)
 
-  const handleClose = async (id: number) => {
-    const result = await closeTrade.mutateAsync(id)
+  const [confirmTrade, setConfirmTrade] = useState<{ id: number; symbol: string; side: string; entry: number } | null>(null)
+
+  const handleCloseConfirm = async () => {
+    if (!confirmTrade) return
+    const result = await closeTrade.mutateAsync(confirmTrade.id)
     if (result.pnl !== undefined) {
-      addToast(result.pnl >= 0 ? 'success' : 'info', `Trade #${id} ferme. PnL: ${result.pnl} USDT (${result.pnl_pct}%)`)
+      addToast(result.pnl >= 0 ? 'success' : 'info', `Trade #${confirmTrade.id} ferme. PnL: ${result.pnl} USDT (${result.pnl_pct}%)`)
     }
+    setConfirmTrade(null)
   }
 
   const handleCheckExits = async () => {
@@ -46,15 +48,18 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {statsLoading || priceLoading ? (
-          <>
-            <SkeletonCard />
-            <SkeletonCard />
-            <SkeletonCard />
-            <SkeletonCard />
-          </>
+          Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
         ) : (
           <>
-            <StatCard label="Prix BTC/USDT" value={price ? `$${price.toLocaleString()}` : '—'} icon={<DollarSign size={16} />} trend="neutral" />
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-zinc-400 text-sm">Prix BTC/USDT</span>
+                <DollarSign size={16} className="text-zinc-500" />
+              </div>
+              <p className={`text-2xl font-bold font-mono ${flashClass}`}>
+                {price ? `$${price.toLocaleString()}` : '—'}
+              </p>
+            </div>
             <StatCard label="RSI" value={indicators?.rsi?.toFixed(1) ?? '—'} icon={<BarChart3 size={16} />} trend={indicators?.rsi > 70 ? 'down' : indicators?.rsi < 30 ? 'up' : 'neutral'} sub={indicators?.rsi > 70 ? 'Suracheté' : indicators?.rsi < 30 ? 'Survendu' : 'Neutre'} />
             <StatCard label="PnL Total" value={stats ? `${stats.total_pnl > 0 ? '+' : ''}${stats.total_pnl} USDT` : '—'} icon={stats?.total_pnl >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />} trend={stats?.total_pnl >= 0 ? 'up' : 'down'} />
             <StatCard label="Win Rate" value={stats ? `${(stats.win_rate * 100).toFixed(1)}%` : '—'} icon={<Trophy size={16} />} trend={stats?.win_rate >= 0.5 ? 'up' : 'down'} sub={stats ? `${stats.closed_trades} trades fermés` : undefined} />
@@ -186,13 +191,19 @@ export default function Dashboard() {
                 <td className="py-3 px-2 text-center"><Badge variant={t.side === 'BUY' ? 'success' : 'danger'}>{t.side}</Badge></td>
                 <td className="py-3 px-2 text-center text-cyan-400 text-sm">{t.strategy_name || '—'}</td>
                 <td className="py-3 px-2 text-center text-zinc-300 text-sm font-mono">${t.entry_price}</td>
-                <td className="py-3 px-2 text-center text-cyan-300 text-sm font-mono">{priceLoading ? <Skeleton className="h-3 w-16 mx-auto" /> : `$${price || '—'}`}</td>
+                <td className="py-3 px-2 text-center text-sm font-mono">
+                  {priceLoading ? <Skeleton className="h-3 w-16 mx-auto" /> : <span className={flashClass}>${price || '—'}</span>}
+                </td>
                 <td className="py-3 px-2 text-center text-rose-400 text-sm font-mono">${t.stop_loss}</td>
                 <td className="py-3 px-2 text-center text-emerald-400 text-sm font-mono">${t.take_profit}</td>
                 <td className="py-3 px-2 text-center text-zinc-400 text-xs">{t.quantity}</td>
                 <td className="py-3 px-2 text-center">
-                  <Button onClick={() => handleClose(t.id)} disabled={closeTrade.isPending} variant="danger" size="sm">
-                    {closeTrade.isPending ? '...' : 'Fermer'}
+                  <Button
+                    onClick={() => setConfirmTrade({ id: t.id, symbol: t.symbol, side: t.side, entry: t.entry_price })}
+                    variant="danger"
+                    size="sm"
+                  >
+                    Fermer
                   </Button>
                 </td>
               </tr>
@@ -202,6 +213,54 @@ export default function Dashboard() {
           <p className="text-zinc-600 text-sm text-center py-6">Aucun trade ouvert</p>
         )}
       </Card>
+
+      <Modal
+        open={!!confirmTrade}
+        onClose={() => setConfirmTrade(null)}
+        onConfirm={handleCloseConfirm}
+        title="Fermer le trade"
+        confirmLabel="Confirmer la fermeture"
+        confirmVariant="danger"
+        loading={closeTrade.isPending}
+      >
+        {confirmTrade && (
+          <div className="space-y-3">
+            <p className="text-zinc-400 text-sm">Voulez-vous fermer ce trade au prix du marché actuel ?</p>
+            <div className="bg-zinc-800 rounded-lg p-3 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-zinc-500">Paire</span>
+                <span className="text-zinc-100">{confirmTrade.symbol}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-zinc-500">Side</span>
+                <Badge variant={confirmTrade.side === 'BUY' ? 'success' : 'danger'}>{confirmTrade.side}</Badge>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-zinc-500">Prix entree</span>
+                <span className="text-zinc-100 font-mono">${confirmTrade.entry}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-zinc-500">Prix actuel</span>
+                <span className={`font-mono ${flashClass}`}>${price || '—'}</span>
+              </div>
+              {price && (
+                <div className="flex justify-between text-sm border-t border-zinc-700 pt-2 mt-2">
+                  <span className="text-zinc-500">PnL estimé</span>
+                  <span className={`font-mono font-bold ${
+                    (confirmTrade.side === 'BUY' ? price - confirmTrade.entry : confirmTrade.entry - price) >= 0
+                      ? 'text-emerald-400' : 'text-rose-400'
+                  }`}>
+                    {confirmTrade.side === 'BUY'
+                      ? `${((price - confirmTrade.entry) * (20 / confirmTrade.entry)).toFixed(2)} USDT`
+                      : `${((confirmTrade.entry - price) * (20 / confirmTrade.entry)).toFixed(2)} USDT`
+                    }
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }

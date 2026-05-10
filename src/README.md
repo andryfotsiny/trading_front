@@ -1,24 +1,22 @@
-# Etape 4+5 — Mobile responsive + tableaux corrigés
+# Etape 6 — Prix animé + modal confirmation
 
 ## Fichiers à copier
 
 ```
-etape45/components/Layout/AppLayout.tsx   → src/components/Layout/AppLayout.tsx
-etape45/components/Layout/Sidebar.tsx     → src/components/Layout/Sidebar.tsx
-etape45/components/Trading/History.tsx    → src/components/Trading/History.tsx
-etape45/components/Strategies/Strategies.tsx → src/components/Strategies/Strategies.tsx
+etape6/components/UI/Modal.tsx              → src/components/UI/Modal.tsx  (nouveau)
+etape6/hooks/useAnimatedPrice.ts            → src/hooks/useAnimatedPrice.ts  (nouveau)
+etape6/components/Dashboard/Dashboard.tsx  → src/components/Dashboard/Dashboard.tsx
 ```
 
 ## Ce qui change
 
-- AppLayout : sidebar collapsible sur mobile + hamburger menu
-- Sidebar : bouton X pour fermer sur mobile + overlay
-- History : tableau responsive + React Query + nouveau design
-- Strategies : React Query + design unifié + badge niveaux + bouton supprimer
+- `Modal.tsx` — composant modal réutilisable avec overlay + confirmation
+- `useAnimatedPrice.ts` — hook qui détecte si le prix monte/descend et applique un flash de couleur
+- `Dashboard.tsx` — prix BTC flash vert/rouge + modal de confirmation avant fermeture de trade avec PnL estimé
 
 ## Commit
 
 ```bash
 git add .
-git commit -m "feat: mobile responsive + tableaux corriges"
+git commit -m "feat: prix anime + modal confirmation fermeture trade"
 ```
