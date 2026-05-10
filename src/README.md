@@ -1,23 +1,24 @@
-# Etape 3 — Skeleton loading + spinners
+# Etape 4+5 — Mobile responsive + tableaux corrigés
 
 ## Fichiers à copier
 
 ```
-etape3/components/UI/Skeleton.tsx          → src/components/UI/Skeleton.tsx  (nouveau)
-etape3/components/Dashboard/Dashboard.tsx  → src/components/Dashboard/Dashboard.tsx
-etape3/components/Bot/Bot.tsx              → src/components/Bot/Bot.tsx
+etape45/components/Layout/AppLayout.tsx   → src/components/Layout/AppLayout.tsx
+etape45/components/Layout/Sidebar.tsx     → src/components/Layout/Sidebar.tsx
+etape45/components/Trading/History.tsx    → src/components/Trading/History.tsx
+etape45/components/Strategies/Strategies.tsx → src/components/Strategies/Strategies.tsx
 ```
 
 ## Ce qui change
 
-- `Skeleton.tsx` — composants réutilisables : `Skeleton`, `SkeletonCard`, `SkeletonTable`, `SkeletonList`
-- `Dashboard` — skeletons sur toutes les cards et tableaux pendant le chargement
-- `Bot` — skeletons sur les cards de statut et la liste des stratégies
-- Spinners sur les boutons en action (Fermer, Vérifier, Lancer)
+- AppLayout : sidebar collapsible sur mobile + hamburger menu
+- Sidebar : bouton X pour fermer sur mobile + overlay
+- History : tableau responsive + React Query + nouveau design
+- Strategies : React Query + design unifié + badge niveaux + bouton supprimer
 
 ## Commit
 
 ```bash
 git add .
-git commit -m "feat: skeleton loading + spinners"
+git commit -m "feat: mobile responsive + tableaux corriges"
 ```

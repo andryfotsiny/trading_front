@@ -1,160 +1,135 @@
-// src/components/Strategies/Strategies.tsx
-import { useEffect, useState } from 'react'
-import { useStore } from '../../store'
-import api from '../../services/api'
+import { useState } from 'react'
+import { Card, Badge, Button, PageHeader } from '../UI/Components'
+import { SkeletonList } from '../UI/Skeleton'
+import { useStrategies, useStrategyTypes, useToggleStrategy, useCreateStrategy, useDeleteStrategy } from '../../hooks/useTrading'
+import { useToastStore } from '../../store/toastStore'
+import { Trash2 } from 'lucide-react'
 
-const STRATEGY_DESCRIPTIONS: Record<string, string> = {
-  rsi_oversold: "BUY quand RSI sort de zone survendue, SELL quand sort de zone surachetee",
-  macd_crossover: "BUY quand MACD croise signal vers le haut, SELL inverse",
-  sma_crossover: "BUY quand SMA rapide croise SMA lente vers le haut, SELL inverse",
-  bollinger_bounce: "BUY au rebond bande basse, SELL au rebond bande haute",
-  grid_trading: "BUY/SELL automatique sur une grille de prix dans un range",
-  dca_bot: "BUY quand le prix baisse sous la SMA (accumulation progressive)",
-  rsi_macd_combo: "BUY/SELL quand RSI + MACD + Bollinger confirment ensemble",
-  mtf_confluence: "HTF = direction du trend, LTF = entree precise. Ne trade que dans le sens du HTF",
-  bos_structure: "Detecte les Break of Structure (cassure de plus haut/bas). Trading institutionnel",
-  liquidity_sweep: "Detecte les pieges (sweep de liquidite) puis entre en sens inverse. Smart Money",
+const LEVELS: Record<string, 'success' | 'warning' | 'info'> = {
+  rsi_oversold: 'success', macd_crossover: 'success', sma_crossover: 'success', bollinger_bounce: 'success',
+  grid_trading: 'warning', dca_bot: 'warning', rsi_macd_combo: 'warning',
+  mtf_confluence: 'info', bos_structure: 'info', liquidity_sweep: 'info',
 }
 
-const STRATEGY_LEVELS: Record<string, string> = {
-  rsi_oversold: "Debutant",
-  macd_crossover: "Debutant",
-  sma_crossover: "Debutant",
-  bollinger_bounce: "Debutant",
-  grid_trading: "Intermediaire",
-  dca_bot: "Intermediaire",
-  rsi_macd_combo: "Intermediaire",
-  mtf_confluence: "Avance",
-  bos_structure: "Avance",
-  liquidity_sweep: "Avance",
-}
-
-const LEVEL_COLORS: Record<string, string> = {
-  "Debutant": "text-green-400",
-  "Intermediaire": "text-yellow-400",
-  "Avance": "text-purple-400",
+const LEVEL_LABELS: Record<string, string> = {
+  rsi_oversold: 'Debutant', macd_crossover: 'Debutant', sma_crossover: 'Debutant', bollinger_bounce: 'Debutant',
+  grid_trading: 'Intermediaire', dca_bot: 'Intermediaire', rsi_macd_combo: 'Intermediaire',
+  mtf_confluence: 'Avance', bos_structure: 'Avance', liquidity_sweep: 'Avance',
 }
 
 export default function Strategies() {
-  const { strategies, fetchStrategies } = useStore()
-  const [types, setTypes] = useState<string[]>([])
-  const [form, setForm] = useState({ name: '', strategy_type: '', symbol: 'BTC/USDT', timeframe: '5m' })
-  const [msg, setMsg] = useState('')
+  const { addToast } = useToastStore()
+  const { data: strategies = [], isLoading } = useStrategies()
+  const { data: types = [] } = useStrategyTypes()
+  const toggleStrategy = useToggleStrategy()
+  const createStrategy = useCreateStrategy()
+  const deleteStrategy = useDeleteStrategy()
+  const [form, setForm] = useState({ name: '', strategy_type: '', symbol: 'BTC/USDT', timeframe: '1h' })
 
-  useEffect(() => {
-    fetchStrategies()
-    api.get('/strategies/types').then((r) => setTypes(r.data.available))
-  }, [])
-
-  const create = async () => {
-    try {
-      await api.post('/strategies/', form)
-      setMsg('Strategie creee')
-      setForm({ ...form, name: '', strategy_type: '' })
-      fetchStrategies()
-    } catch { setMsg('Erreur') }
+  const handleCreate = async () => {
+    if (!form.name || !form.strategy_type) return
+    await createStrategy.mutateAsync(form)
+    setForm({ name: '', strategy_type: '', symbol: 'BTC/USDT', timeframe: '1h' })
+    addToast('success', 'Strategie creee')
   }
 
-  const toggle = async (id: number, active: boolean) => {
-    await api.post(`/strategies/${id}/${active ? 'deactivate' : 'activate'}`)
-    fetchStrategies()
+  const handleToggle = async (id: number, active: boolean, name: string) => {
+    await toggleStrategy.mutateAsync({ id, active })
+    addToast(active ? 'info' : 'success', `${name} ${active ? 'desactivee' : 'activee'}`)
   }
 
-  const run = async (id: number) => {
-    setMsg('Analyse en cours...')
-    try {
-      const { data } = await api.post(`/strategies/${id}/run`)
-      if (data.result && data.result !== 'Aucun signal') {
-        setMsg(`Signal ${data.result.action} a $${data.result.price} (confiance: ${(data.result.confidence * 100).toFixed(0)}%)`)
-      } else {
-        setMsg('Aucun signal detecte')
-      }
-    } catch {
-      setMsg('Erreur (timeout Binance)')
-    }
+  const handleDelete = async (id: number, name: string) => {
+    await deleteStrategy.mutateAsync(id)
+    addToast('info', `${name} supprimee`)
   }
 
-  const remove = async (id: number) => {
-    await api.delete(`/strategies/${id}`)
-    fetchStrategies()
-  }
-
-  const level = STRATEGY_LEVELS[form.strategy_type] || ''
-  const levelColor = LEVEL_COLORS[level] || ''
+  const inputCls = 'w-full px-3 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-zinc-100 outline-none focus:border-cyan-500/50 transition-colors'
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-6">Strategies</h2>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-gray-900 p-5 rounded-xl">
-          <h3 className="font-semibold mb-4">Nouvelle strategie</h3>
-          <div className="space-y-3">
-            <input placeholder="Nom" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full p-3 bg-gray-800 rounded-lg border border-gray-700 outline-none" />
-            <select value={form.strategy_type} onChange={(e) => setForm({ ...form, strategy_type: e.target.value })}
-              className="w-full p-3 bg-gray-800 rounded-lg border border-gray-700 outline-none">
-              <option value="">Choisir un type</option>
-              {types.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
-            {form.strategy_type && (
-              <div className="px-1">
-                <p className="text-xs text-gray-500">{STRATEGY_DESCRIPTIONS[form.strategy_type] || ''}</p>
-                {level && <p className={`text-xs mt-1 ${levelColor}`}>Niveau: {level}</p>}
-              </div>
-            )}
-            <select value={form.symbol} onChange={(e) => setForm({ ...form, symbol: e.target.value })}
-              className="w-full p-3 bg-gray-800 rounded-lg border border-gray-700 outline-none">
-              <option>BTC/USDT</option><option>ETH/USDT</option><option>BNB/USDT</option>
-            </select>
-            <select value={form.timeframe} onChange={(e) => setForm({ ...form, timeframe: e.target.value })}
-              className="w-full p-3 bg-gray-800 rounded-lg border border-gray-700 outline-none">
-              <option value="1m">1 minute</option>
-              <option value="5m">5 minutes</option>
-              <option value="15m">15 minutes</option>
-              <option value="1h">1 heure</option>
-              <option value="4h">4 heures</option>
-              <option value="1d">1 jour</option>
-            </select>
-            <button onClick={create} disabled={!form.name || !form.strategy_type}
-              className="w-full p-3 bg-green-600 hover:bg-green-700 rounded-lg font-medium disabled:opacity-50">
-              Creer
-            </button>
-            {msg && <p className="text-sm text-gray-400 mt-2">{msg}</p>}
-          </div>
-        </div>
+      <PageHeader title="Strategies" sub={`${strategies.length} strategies configurées`} />
 
-        <div className="lg:col-span-2 bg-gray-900 p-5 rounded-xl">
-          <h3 className="font-semibold mb-4">Mes strategies ({strategies.length})</h3>
-          {strategies.length === 0 ? (
-            <p className="text-gray-500">Aucune strategie</p>
-          ) : (
-            <div className="space-y-3">
-              {strategies.map((s) => (
-                <div key={s.id} className="bg-gray-800 p-4 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium">{s.name}</p>
-                        <span className={`text-xs ${LEVEL_COLORS[STRATEGY_LEVELS[s.strategy_type]] || ''}`}>
-                          {STRATEGY_LEVELS[s.strategy_type] || ''}
-                        </span>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card>
+          <h3 className="font-semibold text-zinc-100 mb-4">Nouvelle strategie</h3>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs text-zinc-500 mb-1 block">Nom</label>
+              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder="ex: s1" className={inputCls} />
+            </div>
+            <div>
+              <label className="text-xs text-zinc-500 mb-1 block">Type</label>
+              <select value={form.strategy_type} onChange={(e) => setForm({ ...form, strategy_type: e.target.value })} className={inputCls}>
+                <option value="">Choisir...</option>
+                {types.map((t: string) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-zinc-500 mb-1 block">Paire</label>
+              <select value={form.symbol} onChange={(e) => setForm({ ...form, symbol: e.target.value })} className={inputCls}>
+                <option>BTC/USDT</option>
+                <option>ETH/USDT</option>
+                <option>BNB/USDT</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-zinc-500 mb-1 block">Timeframe</label>
+              <select value={form.timeframe} onChange={(e) => setForm({ ...form, timeframe: e.target.value })} className={inputCls}>
+                {['1m', '5m', '15m', '1h', '4h'].map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <Button onClick={handleCreate} disabled={createStrategy.isPending || !form.name || !form.strategy_type} className="w-full">
+              {createStrategy.isPending ? 'Creation...' : 'Creer la strategie'}
+            </Button>
+          </div>
+        </Card>
+
+        <div className="lg:col-span-2">
+          <Card>
+            <h3 className="font-semibold text-zinc-100 mb-4">Mes strategies ({strategies.length})</h3>
+            {isLoading ? (
+              <SkeletonList items={4} />
+            ) : strategies.length === 0 ? (
+              <p className="text-zinc-600 text-sm text-center py-8">Aucune strategie. Créez-en une.</p>
+            ) : (
+              <div className="space-y-2">
+                {strategies.map((s: any) => (
+                  <div key={s.id} className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-medium text-zinc-100 text-sm">{s.name}</p>
+                        <Badge variant={LEVELS[s.strategy_type] || 'neutral'}>
+                          {LEVEL_LABELS[s.strategy_type] || s.strategy_type}
+                        </Badge>
                       </div>
-                      <p className="text-sm text-gray-400">{s.strategy_type} - {s.symbol} - {s.timeframe}</p>
-                      <p className="text-xs text-gray-600 mt-1">{STRATEGY_DESCRIPTIONS[s.strategy_type] || ''}</p>
+                      <p className="text-xs text-zinc-500 mt-0.5 truncate">{s.strategy_type} · {s.symbol} · {s.timeframe}</p>
                     </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => toggle(s.id, s.is_active)}
-                        className={`px-3 py-1 rounded text-sm ${s.is_active ? 'bg-green-600' : 'bg-gray-700'}`}>
-                        {s.is_active ? 'Active' : 'Inactive'}
+                    <div className="flex items-center gap-2 ml-3 shrink-0">
+                      <button
+                        onClick={() => handleToggle(s.id, s.is_active, s.name)}
+                        disabled={toggleStrategy.isPending}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-40 ${
+                          s.is_active
+                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                            : 'bg-zinc-700 text-zinc-400 hover:bg-emerald-500/10 hover:text-emerald-400'
+                        }`}
+                      >
+                        {s.is_active ? 'Actif' : 'Inactif'}
                       </button>
-                      <button onClick={() => run(s.id)} className="px-3 py-1 bg-blue-600 rounded text-sm">Run</button>
-                      <button onClick={() => remove(s.id)} className="px-3 py-1 bg-red-600 rounded text-sm">X</button>
+                      <button
+                        onClick={() => handleDelete(s.id, s.name)}
+                        disabled={deleteStrategy.isPending}
+                        className="p-1.5 text-zinc-600 hover:text-rose-400 transition-colors disabled:opacity-40"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </Card>
         </div>
       </div>
     </div>
