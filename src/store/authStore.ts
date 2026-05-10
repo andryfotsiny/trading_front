@@ -1,30 +1,19 @@
 import { create } from 'zustand'
 import api from '../services/api'
-import type { User, Trade, Strategy, Indicators } from '../types'
+import type { User } from '../types'
 
-interface AppState {
+interface AuthState {
   user: User | null
   token: string | null
-  trades: Trade[]
-  strategies: Strategy[]
-  indicators: Indicators | null
-  loading: boolean
   login: (email: string, password: string) => Promise<void>
   register: (email: string, username: string, password: string) => Promise<void>
   logout: () => void
   fetchMe: () => Promise<void>
-  fetchTrades: () => Promise<void>
-  fetchStrategies: () => Promise<void>
-  fetchIndicators: (base: string, quote: string) => Promise<void>
 }
 
-export const useStore = create<AppState>((set) => ({
+export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   token: localStorage.getItem('token'),
-  trades: [],
-  strategies: [],
-  indicators: null,
-  loading: false,
 
   login: async (email, password) => {
     const form = new FormData()
@@ -47,25 +36,5 @@ export const useStore = create<AppState>((set) => ({
   fetchMe: async () => {
     const { data } = await api.get('/users/me')
     set({ user: data })
-  },
-
-  fetchTrades: async () => {
-    const open = await api.get('/trading/open-trades')
-    set({ trades: open.data })
-  },
-
-  fetchStrategies: async () => {
-    const { data } = await api.get('/strategies/')
-    set({ strategies: data })
-  },
-
-  fetchIndicators: async (base, quote) => {
-    set({ loading: true })
-    try {
-      const { data } = await api.get(`/signals/indicators/${base}/${quote}`)
-      set({ indicators: data })
-    } finally {
-      set({ loading: false })
-    }
   },
 }))

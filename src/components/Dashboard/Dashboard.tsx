@@ -1,60 +1,41 @@
-// src/components/Dashboard/Dashboard.tsx
-import { useEffect, useState } from 'react'
-import { useStore } from '../../store'
 import { useToastStore } from '../../store/toastStore'
-import api from '../../services/api'
-import { TrendingUp, TrendingDown, Activity, BarChart3, DollarSign, Trophy } from 'lucide-react'
+import { TrendingUp, TrendingDown, BarChart3, DollarSign, Trophy } from 'lucide-react'
+import {
+  useDashboardStats,
+  useStrategyStats,
+  useOpenTrades,
+  useBtcPrice,
+  useBalance,
+  useIndicators,
+  useCloseTrade,
+  useCheckExits,
+} from '../../hooks/useTrading'
 
 export default function Dashboard() {
-  const { indicators, fetchIndicators } = useStore()
   const { addToast } = useToastStore()
-  const [stats, setStats] = useState<any>(null)
-  const [trades, setTrades] = useState<any[]>([])
-  const [stratStats, setStratStats] = useState<any[]>([])
-  const [balance, setBalance] = useState<any>(null)
-  const [price, setPrice] = useState<number | null>(null)
-  const [closing, setClosing] = useState<number | null>(null)
-  const [checking, setChecking] = useState(false)
+  const { data: stats } = useDashboardStats()
+  const { data: stratStats = [] } = useStrategyStats()
+  const { data: trades = [] } = useOpenTrades()
+  const { data: price } = useBtcPrice()
+  const { data: balance } = useBalance()
+  const { data: indicators } = useIndicators()
+  const closeTrade = useCloseTrade()
+  const checkExits = useCheckExits()
 
-  const refresh = () => {
-    fetchIndicators('BTC', 'USDT')
-    api.get('/dashboard/stats').then((r) => setStats(r.data)).catch(() => {})
-    api.get('/dashboard/strategy-stats').then((r) => setStratStats(r.data)).catch(() => {})
-    api.get('/trading/open-trades').then((r) => setTrades(r.data)).catch(() => {})
-    api.get('/market/price/BTC/USDT').then((r) => setPrice(r.data.price)).catch(() => {})
-    api.get('/exchanges/balance').then((r) => setBalance(r.data)).catch(() => {})
+  const handleClose = async (id: number) => {
+    const result = await closeTrade.mutateAsync(id)
+    if (result.pnl !== undefined) {
+      addToast(result.pnl >= 0 ? 'success' : 'info', `Trade #${id} ferme. PnL: ${result.pnl} USDT (${result.pnl_pct}%)`)
+    }
   }
 
-  useEffect(() => {
-    refresh()
-    const interval = setInterval(refresh, 30000)
-    return () => clearInterval(interval)
-  }, [])
-
-  const closeTrade = async (id: number) => {
-    setClosing(id)
-    try {
-      const { data } = await api.post(`/trading/close/${id}`)
-      if (data.pnl !== undefined) {
-        addToast(data.pnl >= 0 ? 'success' : 'info', `Trade #${id} ferme. PnL: ${data.pnl} USDT (${data.pnl_pct}%)`)
-      }
-      refresh()
-    } catch {}
-    setClosing(null)
-  }
-
-  const checkExits = async () => {
-    setChecking(true)
-    try {
-      const { data } = await api.post('/trading/check-exits')
-      if (data.closed && data.closed.length > 0) {
-        addToast('success', `${data.closed.length} trade(s) ferme(s) automatiquement`)
-        refresh()
-      } else {
-        addToast('info', 'Aucun SL/TP touche. Les trades restent ouverts.')
-      }
-    } catch {}
-    setChecking(false)
+  const handleCheckExits = async () => {
+    const result = await checkExits.mutateAsync()
+    if (result.closed?.length > 0) {
+      addToast('success', `${result.closed.length} trade(s) ferme(s) automatiquement`)
+    } else {
+      addToast('info', 'Aucun SL/TP touche.')
+    }
   }
 
   const StatCard = ({ label, value, icon: Icon, color }: any) => (
@@ -159,36 +140,38 @@ export default function Dashboard() {
         <div className="bg-gray-900 p-5 rounded-xl">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold">Trades ouverts ({trades.length})</h3>
-            <button onClick={checkExits} disabled={checking}
+            <button onClick={handleCheckExits} disabled={checkExits.isPending}
               className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg text-sm disabled:opacity-50">
-              {checking ? 'Verification...' : 'Verifier SL/TP'}
+              {checkExits.isPending ? 'Verification...' : 'Verifier SL/TP'}
             </button>
           </div>
-          <table className="w-full text-sm">
-            <thead><tr className="text-gray-400 border-b border-gray-800">
-              <th className="text-left py-2">Paire</th><th>Side</th><th>Strategie</th><th>Entree</th><th>Prix actuel</th><th>SL</th><th>TP</th><th>Quantite</th><th>Action</th>
-            </tr></thead>
-            <tbody>
-              {trades.map((t: any) => (
-                <tr key={t.id} className="border-b border-gray-800">
-                  <td className="py-2">{t.symbol}</td>
-                  <td className={t.side === 'BUY' ? 'text-green-400' : 'text-red-400'}>{t.side}</td>
-                  <td className="text-purple-400">{t.strategy_name || '-'}</td>
-                  <td>${t.entry_price}</td>
-                  <td className="text-blue-400">${price || '...'}</td>
-                  <td className="text-red-400">${t.stop_loss}</td>
-                  <td className="text-green-400">${t.take_profit}</td>
-                  <td>{t.quantity}</td>
-                  <td>
-                    <button onClick={() => closeTrade(t.id)} disabled={closing === t.id}
-                      className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-xs disabled:opacity-50">
-                      {closing === t.id ? '...' : 'Fermer'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead><tr className="text-gray-400 border-b border-gray-800">
+                <th className="text-left py-2">Paire</th><th>Side</th><th>Strategie</th><th>Entree</th><th>Prix actuel</th><th>SL</th><th>TP</th><th>Quantite</th><th>Action</th>
+              </tr></thead>
+              <tbody>
+                {trades.map((t: any) => (
+                  <tr key={t.id} className="border-b border-gray-800">
+                    <td className="py-2">{t.symbol}</td>
+                    <td className={t.side === 'BUY' ? 'text-green-400' : 'text-red-400'}>{t.side}</td>
+                    <td className="text-purple-400">{t.strategy_name || '-'}</td>
+                    <td>${t.entry_price}</td>
+                    <td className="text-blue-400">${price || '...'}</td>
+                    <td className="text-red-400">${t.stop_loss}</td>
+                    <td className="text-green-400">${t.take_profit}</td>
+                    <td>{t.quantity}</td>
+                    <td>
+                      <button onClick={() => handleClose(t.id)} disabled={closeTrade.isPending}
+                        className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-xs disabled:opacity-50">
+                        {closeTrade.isPending ? '...' : 'Fermer'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

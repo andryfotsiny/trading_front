@@ -1,6 +1,6 @@
-// src/App.tsx
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useStore } from './store'
 import Login from './components/Auth/Login'
 import Register from './components/Auth/Register'
@@ -14,6 +14,15 @@ import Optimizer from './components/Optimizer/Optimizer'
 import Calendar from './components/Calendar/Calendar'
 import History from './components/Trading/History'
 import Settings from './components/Settings/Settings'
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 10000,
+      retry: 1,
+    },
+  },
+})
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = useStore((s) => s.token)
@@ -29,22 +38,24 @@ export default function App() {
   }, [token])
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-          <Route index element={<Dashboard />} />
-          <Route path="bot" element={<BotPage />} />
-          <Route path="trading" element={<Trading />} />
-          <Route path="strategies" element={<Strategies />} />
-          <Route path="backtest" element={<Backtest />} />
-          <Route path="optimizer" element={<Optimizer />} />
-          <Route path="calendar" element={<Calendar />} />
-          <Route path="history" element={<History />} />
-          <Route path="settings" element={<Settings />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+            <Route index element={<Dashboard />} />
+            <Route path="bot" element={<BotPage />} />
+            <Route path="trading" element={<Trading />} />
+            <Route path="strategies" element={<Strategies />} />
+            <Route path="backtest" element={<Backtest />} />
+            <Route path="optimizer" element={<Optimizer />} />
+            <Route path="calendar" element={<Calendar />} />
+            <Route path="history" element={<History />} />
+            <Route path="settings" element={<Settings />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </QueryClientProvider>
   )
 }
