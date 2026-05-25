@@ -63,14 +63,15 @@ export default function History() {
         ) : filtered.length === 0 ? (
           <p className="text-zinc-600 text-sm text-center py-8">Aucun trade</p>
         ) : (
-          <Table headers={['Paire', 'Side', 'Strategie', 'Entree', 'Sortie', 'PnL', 'PnL %', 'Type', 'Date']}>
+          <Table headers={['Paire', 'Side', 'Strategie', 'Type', 'Entree', 'Sortie', 'PnL', 'PnL %', 'Date']}>
             {filtered.map((t: any) => (
               <tr key={t.id}>
                 <td className="py-3 px-2 text-zinc-100 text-sm font-medium">{t.symbol}</td>
                 <td className="py-3 px-2 text-center">
                   <Badge variant={t.side === 'BUY' ? 'success' : 'danger'}>{t.side}</Badge>
                 </td>
-                <td className="py-3 px-2 text-center text-cyan-400 text-sm">{t.strategy_name || 'manual'}</td>
+                <td className="py-3 px-2 text-center text-cyan-400 text-sm">{t.strategy_name || '—'}</td>
+                <td className="py-3 px-2 text-center text-zinc-400 text-xs">{t.strategy_type || '—'}</td>
                 <td className="py-3 px-2 text-center text-zinc-300 text-sm font-mono">${t.entry_price}</td>
                 <td className="py-3 px-2 text-center text-zinc-300 text-sm font-mono">${t.exit_price}</td>
                 <td className={`py-3 px-2 text-center text-sm font-mono font-medium ${t.pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
@@ -78,9 +79,6 @@ export default function History() {
                 </td>
                 <td className={`py-3 px-2 text-center text-sm ${t.pnl_pct >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                   {t.pnl_pct >= 0 ? '+' : ''}{t.pnl_pct}%
-                </td>
-                <td className="py-3 px-2 text-center">
-                  <Badge variant={t.is_paper ? 'neutral' : 'info'}>{t.is_paper ? 'Paper' : 'Reel'}</Badge>
                 </td>
                 <td className="py-3 px-2 text-center text-zinc-500 text-xs">{t.closed_at?.split('T')[0]}</td>
               </tr>

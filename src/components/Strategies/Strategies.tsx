@@ -17,6 +17,18 @@ const LEVEL_LABELS: Record<string, string> = {
   mtf_confluence: 'Avance', bos_structure: 'Avance', liquidity_sweep: 'Avance',
 }
 
+const DEFAULT_FORM = {
+  name: '',
+  strategy_type: '',
+  symbol: 'BTC/USDT',
+  timeframe: '1h',
+  stop_loss_pct: 0.01,
+  take_profit_pct: 0.02,
+}
+
+const inputCls = 'w-full px-3 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-zinc-100 outline-none focus:border-cyan-500/50 transition-colors'
+const labelCls = 'text-xs text-zinc-500 mb-1 block'
+
 export default function Strategies() {
   const { addToast } = useToastStore()
   const { data: strategies = [], isLoading } = useStrategies()
@@ -24,12 +36,12 @@ export default function Strategies() {
   const toggleStrategy = useToggleStrategy()
   const createStrategy = useCreateStrategy()
   const deleteStrategy = useDeleteStrategy()
-  const [form, setForm] = useState({ name: '', strategy_type: '', symbol: 'BTC/USDT', timeframe: '1h' })
+  const [form, setForm] = useState(DEFAULT_FORM)
 
   const handleCreate = async () => {
     if (!form.name || !form.strategy_type) return
     await createStrategy.mutateAsync(form)
-    setForm({ name: '', strategy_type: '', symbol: 'BTC/USDT', timeframe: '1h' })
+    setForm(DEFAULT_FORM)
     addToast('success', 'Strategie creee')
   }
 
@@ -43,8 +55,6 @@ export default function Strategies() {
     addToast('info', `${name} supprimee`)
   }
 
-  const inputCls = 'w-full px-3 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-zinc-100 outline-none focus:border-cyan-500/50 transition-colors'
-
   return (
     <div>
       <PageHeader title="Strategies" sub={`${strategies.length} strategies configurées`} />
@@ -54,19 +64,19 @@ export default function Strategies() {
           <h3 className="font-semibold text-zinc-100 mb-4">Nouvelle strategie</h3>
           <div className="space-y-3">
             <div>
-              <label className="text-xs text-zinc-500 mb-1 block">Nom</label>
+              <label className={labelCls}>Nom</label>
               <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="ex: s1" className={inputCls} />
+                placeholder="ex: dca_4h" className={inputCls} />
             </div>
             <div>
-              <label className="text-xs text-zinc-500 mb-1 block">Type</label>
+              <label className={labelCls}>Type</label>
               <select value={form.strategy_type} onChange={(e) => setForm({ ...form, strategy_type: e.target.value })} className={inputCls}>
                 <option value="">Choisir...</option>
                 {types.map((t: string) => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-xs text-zinc-500 mb-1 block">Paire</label>
+              <label className={labelCls}>Paire</label>
               <select value={form.symbol} onChange={(e) => setForm({ ...form, symbol: e.target.value })} className={inputCls}>
                 <option>BTC/USDT</option>
                 <option>ETH/USDT</option>
@@ -74,11 +84,42 @@ export default function Strategies() {
               </select>
             </div>
             <div>
-              <label className="text-xs text-zinc-500 mb-1 block">Timeframe</label>
+              <label className={labelCls}>Timeframe</label>
               <select value={form.timeframe} onChange={(e) => setForm({ ...form, timeframe: e.target.value })} className={inputCls}>
                 {['1m', '5m', '15m', '1h', '4h'].map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className={labelCls}>Stop Loss %</label>
+                <input
+                  type="number"
+                  step="0.005"
+                  min="0.001"
+                  max="0.2"
+                  value={form.stop_loss_pct}
+                  onChange={(e) => setForm({ ...form, stop_loss_pct: parseFloat(e.target.value) })}
+                  className={inputCls}
+                />
+                <p className="text-xs text-zinc-600 mt-0.5">{(form.stop_loss_pct * 100).toFixed(1)}%</p>
+              </div>
+              <div>
+                <label className={labelCls}>Take Profit %</label>
+                <input
+                  type="number"
+                  step="0.005"
+                  min="0.001"
+                  max="0.5"
+                  value={form.take_profit_pct}
+                  onChange={(e) => setForm({ ...form, take_profit_pct: parseFloat(e.target.value) })}
+                  className={inputCls}
+                />
+                <p className="text-xs text-zinc-600 mt-0.5">{(form.take_profit_pct * 100).toFixed(1)}%</p>
+              </div>
+            </div>
+            <p className="text-xs text-zinc-600">
+              Ratio TP/SL : 1:{(form.take_profit_pct / form.stop_loss_pct).toFixed(1)}
+            </p>
             <Button onClick={handleCreate} disabled={createStrategy.isPending || !form.name || !form.strategy_type} className="w-full">
               {createStrategy.isPending ? 'Creation...' : 'Creer la strategie'}
             </Button>
@@ -103,7 +144,11 @@ export default function Strategies() {
                           {LEVEL_LABELS[s.strategy_type] || s.strategy_type}
                         </Badge>
                       </div>
-                      <p className="text-xs text-zinc-500 mt-0.5 truncate">{s.strategy_type} · {s.symbol} · {s.timeframe}</p>
+                      <p className="text-xs text-zinc-500 mt-0.5 truncate">
+                        {s.strategy_type} · {s.symbol} · {s.timeframe}
+                        {s.stop_loss_pct && ` · SL ${(s.stop_loss_pct * 100).toFixed(1)}%`}
+                        {s.take_profit_pct && ` · TP ${(s.take_profit_pct * 100).toFixed(1)}%`}
+                      </p>
                     </div>
                     <div className="flex items-center gap-2 ml-3 shrink-0">
                       <button
