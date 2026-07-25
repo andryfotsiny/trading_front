@@ -3,7 +3,7 @@ import { Card, Badge, Button, PageHeader } from '../UI/Components'
 import { SkeletonList } from '../UI/Skeleton'
 import { useStrategies, useStrategyTypes, useToggleStrategy, useCreateStrategy, useDeleteStrategy } from '../../hooks/useTrading'
 import { useToastStore } from '../../store/toastStore'
-import { Trash2 } from 'lucide-react'
+import { Trash2, Lock } from 'lucide-react'
 
 const LEVELS: Record<string, 'success' | 'warning' | 'info'> = {
   rsi_oversold: 'success', macd_crossover: 'success', sma_crossover: 'success', bollinger_bounce: 'success',
@@ -75,6 +75,20 @@ export default function Strategies() {
           <div className="space-y-3">
             <div>
               <div className="flex items-center justify-between mb-1">
+                <label className={labelCls + ' mb-0'}>Type</label>
+                {form.strategy_type && LEVEL_LABELS[form.strategy_type] && (
+                  <Badge variant={LEVELS[form.strategy_type] || 'neutral'}>{LEVEL_LABELS[form.strategy_type]}</Badge>
+                )}
+              </div>
+              <select value={form.strategy_type} onChange={(e) => setForm({ ...form, strategy_type: e.target.value })} className={inputCls}>
+                <option value="">Choisir...</option>
+                {types.map((t: string) => (
+                  <option key={t} value={t}>{t}{LEVEL_LABELS[t] ? ` · ${LEVEL_LABELS[t]}` : ''}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-1">
                 <label className={labelCls + ' mb-0'}>Nom</label>
                 <button
                   type="button"
@@ -89,20 +103,18 @@ export default function Strategies() {
                 </button>
               </div>
               {autoName ? (
-                <div className={inputCls + ' text-zinc-400 font-mono text-xs truncate'}>
-                  {finalName || 'Choisir un type...'}
-                </div>
+                form.strategy_type ? (
+                  <div className={inputCls + ' flex items-center justify-between text-zinc-400 font-mono text-xs'}>
+                    <span className="truncate">{finalName}</span>
+                    <Lock size={12} className="text-zinc-600 shrink-0 ml-2" />
+                  </div>
+                ) : (
+                  <p className="text-xs text-zinc-600 py-2">Choisis un type, le nom se genere automatiquement.</p>
+                )
               ) : (
                 <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
                   placeholder="ex: dca_4h" className={inputCls} />
               )}
-            </div>
-            <div>
-              <label className={labelCls}>Type</label>
-              <select value={form.strategy_type} onChange={(e) => setForm({ ...form, strategy_type: e.target.value })} className={inputCls}>
-                <option value="">Choisir...</option>
-                {types.map((t: string) => <option key={t} value={t}>{t}</option>)}
-              </select>
             </div>
             <div>
               <label className={labelCls}>Paire</label>
