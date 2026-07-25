@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Wallet, TrendingUp, TrendingDown, Trophy } from 'lucide-react'
+import { Wallet, Landmark, TrendingUp, TrendingDown, Trophy } from 'lucide-react'
 import { useToastStore } from '../../store/toastStore'
 import { StatCard, Card, Badge, Button, Table, PageHeader } from '../UI/Components'
 import { SkeletonCard, SkeletonTable, Skeleton } from '../UI/Skeleton'
@@ -7,7 +7,7 @@ import { Modal } from '../UI/Modal'
 import { useAnimatedPrice } from '../../hooks/useAnimatedPrice'
 import {
   useDashboardStats, useStrategyStats, useOpenTrades,
-  useBtcPrice, useCloseTrade, useCheckExits,
+  useBtcPrice, useBalance, useCloseTrade, useCheckExits,
 } from '../../hooks/useTrading'
 
 const PAPER_CAPITAL = 1000
@@ -18,6 +18,7 @@ export default function Dashboard() {
   const { data: stratStats = [], isLoading: stratLoading } = useStrategyStats()
   const { data: trades = [], isLoading: tradesLoading } = useOpenTrades()
   const { data: price, isLoading: priceLoading } = useBtcPrice()
+  const { data: balance } = useBalance()
   const closeTrade = useCloseTrade()
   const checkExits = useCheckExits()
   const { flashClass } = useAnimatedPrice(price)
@@ -46,12 +47,13 @@ export default function Dashboard() {
     <div>
       <PageHeader title="Dashboard" sub="Vue d'ensemble du bot de trading" />
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {statsLoading ? (
-          Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)
+          Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
         ) : (
           <>
             <StatCard label="Solde (paper)" value={`$${(PAPER_CAPITAL + (stats?.total_pnl ?? 0)).toFixed(2)}`} icon={<Wallet size={16} />} trend={stats?.total_pnl >= 0 ? 'up' : 'down'} sub={`Capital de base $${PAPER_CAPITAL}`} />
+            <StatCard label="Solde reel" value={`$${(balance?.free?.USDT ?? 0).toFixed(2)}`} icon={<Landmark size={16} />} trend="neutral" sub="Compte Binance" />
             <StatCard label="PnL Total" value={stats ? `${stats.total_pnl > 0 ? '+' : ''}${stats.total_pnl} USDT` : '—'} icon={stats?.total_pnl >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />} trend={stats?.total_pnl >= 0 ? 'up' : 'down'} />
             <StatCard label="Win Rate" value={stats ? `${(stats.win_rate * 100).toFixed(1)}%` : '—'} icon={<Trophy size={16} />} trend={stats?.win_rate >= 0.5 ? 'up' : 'down'} sub={stats ? `${stats.closed_trades} trades fermés` : undefined} />
           </>
