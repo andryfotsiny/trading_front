@@ -21,9 +21,7 @@ const DEFAULT_FORM = {
   name: '',
   strategy_type: '',
   symbol: 'BTC/USDT',
-  timeframe: '1h',
-  stop_loss_pct: 0.01,
-  take_profit_pct: 0.02,
+  timeframe: 'auto',
 }
 
 const inputCls = 'w-full px-3 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-zinc-100 outline-none focus:border-cyan-500/50 transition-colors'
@@ -86,39 +84,12 @@ export default function Strategies() {
             <div>
               <label className={labelCls}>Timeframe</label>
               <select value={form.timeframe} onChange={(e) => setForm({ ...form, timeframe: e.target.value })} className={inputCls}>
-                {['1m', '5m', '15m', '1h', '4h'].map((t) => <option key={t} value={t}>{t}</option>)}
+                <option value="auto">Auto</option>
+                {['15m', '1h', '4h'].map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className={labelCls}>Stop Loss %</label>
-                <input
-                  type="number"
-                  step="0.005"
-                  min="0.001"
-                  max="0.2"
-                  value={form.stop_loss_pct}
-                  onChange={(e) => setForm({ ...form, stop_loss_pct: parseFloat(e.target.value) })}
-                  className={inputCls}
-                />
-                <p className="text-xs text-zinc-600 mt-0.5">{(form.stop_loss_pct * 100).toFixed(1)}%</p>
-              </div>
-              <div>
-                <label className={labelCls}>Take Profit %</label>
-                <input
-                  type="number"
-                  step="0.005"
-                  min="0.001"
-                  max="0.5"
-                  value={form.take_profit_pct}
-                  onChange={(e) => setForm({ ...form, take_profit_pct: parseFloat(e.target.value) })}
-                  className={inputCls}
-                />
-                <p className="text-xs text-zinc-600 mt-0.5">{(form.take_profit_pct * 100).toFixed(1)}%</p>
-              </div>
-            </div>
             <p className="text-xs text-zinc-600">
-              Ratio TP/SL : 1:{(form.take_profit_pct / form.stop_loss_pct).toFixed(1)}
+              Stop Loss et Take Profit calcules automatiquement selon la volatilite (ATR).
             </p>
             <Button onClick={handleCreate} disabled={createStrategy.isPending || !form.name || !form.strategy_type} className="w-full">
               {createStrategy.isPending ? 'Creation...' : 'Creer la strategie'}
@@ -146,8 +117,6 @@ export default function Strategies() {
                       </div>
                       <p className="text-xs text-zinc-500 mt-0.5 truncate">
                         {s.strategy_type} · {s.symbol} · {s.timeframe}
-                        {s.stop_loss_pct && ` · SL ${(s.stop_loss_pct * 100).toFixed(1)}%`}
-                        {s.take_profit_pct && ` · TP ${(s.take_profit_pct * 100).toFixed(1)}%`}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 ml-3 shrink-0">
