@@ -32,6 +32,14 @@ export function useTradeHistory(limit = 100) {
   })
 }
 
+export function useOhlcv(base: string, quote: string, timeframe: string, limit = 300) {
+  return useQuery({
+    queryKey: ['market', 'ohlcv', base, quote, timeframe, limit],
+    queryFn: () => api.get(`/market/ohlcv/${base}/${quote}?timeframe=${timeframe}&limit=${limit}`).then((r) => r.data),
+    refetchInterval: 30000,
+  })
+}
+
 export function useBtcPrice() {
   return useQuery({
     queryKey: ['market', 'price', 'BTC/USDT'],

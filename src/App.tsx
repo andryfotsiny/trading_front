@@ -8,6 +8,7 @@ import AppLayout from './components/Layout/AppLayout'
 import Dashboard from './components/Dashboard/Dashboard'
 import BotPage from './components/Bot/Bot'
 import Trading from './components/Trading/Trading'
+import ChartPage from './components/Chart/Chart'
 import Strategies from './components/Strategies/Strategies'
 import Backtest from './components/Backtest/Backtest'
 import Optimizer from './components/Optimizer/Optimizer'
@@ -48,6 +49,7 @@ export default function App() {
             <Route index element={<Dashboard />} />
             <Route path="bot" element={<BotPage />} />
             <Route path="trading" element={<Trading />} />
+            <Route path="chart" element={<ChartPage />} />
             <Route path="strategies" element={<Strategies />} />
             <Route path="backtest" element={<Backtest />} />
             <Route path="optimizer" element={<Optimizer />} />
