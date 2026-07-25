@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createChart, ColorType, LineStyle, UTCTimestamp } from 'lightweight-charts'
-import { PageHeader, Card } from '../UI/Components'
+import { Card } from '../UI/Components'
 import { useOhlcv, useOpenTrades, useTradeHistory } from '../../hooks/useTrading'
 import History from '../Trading/History'
 
@@ -132,7 +132,9 @@ export default function ChartPage() {
 
   return (
     <div>
-      <PageHeader title="Chart" sub="Bougies et trades" />
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-semibold text-zinc-100">Graphique</h3>
+      </div>
 
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <div className="flex rounded-lg overflow-hidden border border-zinc-700">

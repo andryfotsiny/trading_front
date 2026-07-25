@@ -1,17 +1,15 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useStore } from '../../store'
-import { LayoutDashboard, TrendingUp, BarChart3, History, Bot, LogOut, Cpu, Settings, Search, CalendarDays, X, CandlestickChart } from 'lucide-react'
+import { LayoutDashboard, TrendingUp, BarChart3, Bot, LogOut, Cpu, Settings, Search, CalendarDays, X } from 'lucide-react'
 
 const links = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/bot', label: 'Bot', icon: Cpu },
   { to: '/trading', label: 'Trading', icon: TrendingUp },
-  { to: '/chart', label: 'Chart', icon: CandlestickChart },
   { to: '/strategies', label: 'Strategies', icon: Bot },
   { to: '/backtest', label: 'Backtest', icon: BarChart3 },
   { to: '/optimizer', label: 'Optimiseur', icon: Search },
   { to: '/calendar', label: 'Calendrier', icon: CalendarDays },
-  { to: '/history', label: 'Historique', icon: History },
   { to: '/settings', label: 'Parametres', icon: Settings },
 ]
 

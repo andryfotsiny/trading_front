@@ -4,6 +4,7 @@ import { useToastStore } from '../../store/toastStore'
 import { StatCard, Card, Badge, Button, Table, PageHeader } from '../UI/Components'
 import { SkeletonCard, SkeletonTable, Skeleton } from '../UI/Skeleton'
 import { Modal } from '../UI/Modal'
+import ChartPage from '../Chart/Chart'
 import { useAnimatedPrice } from '../../hooks/useAnimatedPrice'
 import {
   useDashboardStats, useStrategyStats, useOpenTrades,
@@ -76,6 +77,10 @@ export default function Dashboard() {
             </Card>
           ))
         )}
+      </div>
+
+      <div className="mb-6">
+        <ChartPage />
       </div>
 
       <Card className="mb-6">
