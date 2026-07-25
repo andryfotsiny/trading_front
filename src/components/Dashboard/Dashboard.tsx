@@ -47,6 +47,24 @@ export default function Dashboard() {
     <div>
       <PageHeader title="Dashboard" sub="Vue d'ensemble du bot de trading" />
 
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-x-6 gap-y-4 pb-5 mb-6 border-b border-zinc-800">
+        {[
+          { label: 'Solde (paper)', value: `$${(PAPER_CAPITAL + (stats?.total_pnl ?? 0)).toFixed(2)}`, color: 'text-zinc-100' },
+          { label: 'Solde reel', value: `$${(balance?.free?.USDT ?? 0).toFixed(2)}`, color: 'text-zinc-100' },
+          { label: 'PnL Total', value: stats ? `${stats.total_pnl > 0 ? '+' : ''}${stats.total_pnl}` : '—', color: (stats?.total_pnl ?? 0) >= 0 ? 'text-emerald-400' : 'text-rose-400' },
+          { label: 'Win Rate', value: stats ? `${(stats.win_rate * 100).toFixed(1)}%` : '—', color: 'text-zinc-100' },
+          { label: 'Trades ouverts', value: stats?.open_trades ?? 0, color: 'text-amber-400' },
+          { label: 'Trades fermes', value: stats?.closed_trades ?? 0, color: 'text-zinc-100' },
+          { label: 'TP (gains)', value: stats?.tp_count ?? 0, color: 'text-emerald-400' },
+          { label: 'SL (pertes)', value: stats?.sl_count ?? 0, color: 'text-rose-400' },
+        ].map((item) => (
+          <div key={item.label}>
+            <p className="text-xs text-zinc-500 mb-1">{item.label}</p>
+            <p className={`text-base font-semibold ${item.color}`}>{item.value}</p>
+          </div>
+        ))}
+      </div>
+
       <div className="mb-6">
         <ChartPage />
       </div>
@@ -117,24 +135,6 @@ export default function Dashboard() {
           <p className="text-zinc-600 text-sm text-center py-6">Aucun trade ouvert</p>
         )}
       </Card>
-
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-x-6 gap-y-4 border-t border-zinc-800 pt-5 mt-6">
-        {[
-          { label: 'Solde (paper)', value: `$${(PAPER_CAPITAL + (stats?.total_pnl ?? 0)).toFixed(2)}`, color: 'text-zinc-100' },
-          { label: 'Solde reel', value: `$${(balance?.free?.USDT ?? 0).toFixed(2)}`, color: 'text-zinc-100' },
-          { label: 'PnL Total', value: stats ? `${stats.total_pnl > 0 ? '+' : ''}${stats.total_pnl}` : '—', color: (stats?.total_pnl ?? 0) >= 0 ? 'text-emerald-400' : 'text-rose-400' },
-          { label: 'Win Rate', value: stats ? `${(stats.win_rate * 100).toFixed(1)}%` : '—', color: 'text-zinc-100' },
-          { label: 'Trades ouverts', value: stats?.open_trades ?? 0, color: 'text-amber-400' },
-          { label: 'Trades fermes', value: stats?.closed_trades ?? 0, color: 'text-zinc-100' },
-          { label: 'TP (gains)', value: stats?.tp_count ?? 0, color: 'text-emerald-400' },
-          { label: 'SL (pertes)', value: stats?.sl_count ?? 0, color: 'text-rose-400' },
-        ].map((item) => (
-          <div key={item.label}>
-            <p className="text-xs text-zinc-500 mb-1">{item.label}</p>
-            <p className={`text-base font-semibold ${item.color}`}>{item.value}</p>
-          </div>
-        ))}
-      </div>
 
       <Modal
         open={!!confirmTrade}
