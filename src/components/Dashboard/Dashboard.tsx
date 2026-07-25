@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { DollarSign, TrendingUp, TrendingDown, BarChart3, Trophy, Activity } from 'lucide-react'
+import { Wallet, TrendingUp, TrendingDown, Trophy } from 'lucide-react'
 import { useToastStore } from '../../store/toastStore'
 import { StatCard, Card, Badge, Button, Table, PageHeader } from '../UI/Components'
 import { SkeletonCard, SkeletonTable, Skeleton } from '../UI/Skeleton'
@@ -7,8 +7,10 @@ import { Modal } from '../UI/Modal'
 import { useAnimatedPrice } from '../../hooks/useAnimatedPrice'
 import {
   useDashboardStats, useStrategyStats, useOpenTrades,
-  useBtcPrice, useBalance, useIndicators, useCloseTrade, useCheckExits,
+  useBtcPrice, useCloseTrade, useCheckExits,
 } from '../../hooks/useTrading'
+
+const PAPER_CAPITAL = 1000
 
 export default function Dashboard() {
   const { addToast } = useToastStore()
@@ -16,8 +18,6 @@ export default function Dashboard() {
   const { data: stratStats = [], isLoading: stratLoading } = useStrategyStats()
   const { data: trades = [], isLoading: tradesLoading } = useOpenTrades()
   const { data: price, isLoading: priceLoading } = useBtcPrice()
-  const { data: balance, isLoading: balanceLoading } = useBalance()
-  const { data: indicators, isLoading: indicatorsLoading } = useIndicators()
   const closeTrade = useCloseTrade()
   const checkExits = useCheckExits()
   const { flashClass } = useAnimatedPrice(price)
@@ -46,21 +46,12 @@ export default function Dashboard() {
     <div>
       <PageHeader title="Dashboard" sub="Vue d'ensemble du bot de trading" />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {statsLoading || priceLoading ? (
-          Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        {statsLoading ? (
+          Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)
         ) : (
           <>
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-zinc-400 text-sm">Prix BTC/USDT</span>
-                <DollarSign size={16} className="text-zinc-500" />
-              </div>
-              <p className={`text-2xl font-bold font-mono ${flashClass}`}>
-                {price ? `$${price.toLocaleString()}` : '—'}
-              </p>
-            </div>
-            <StatCard label="RSI" value={indicators?.rsi?.toFixed(1) ?? '—'} icon={<BarChart3 size={16} />} trend={indicators?.rsi > 70 ? 'down' : indicators?.rsi < 30 ? 'up' : 'neutral'} sub={indicators?.rsi > 70 ? 'Suracheté' : indicators?.rsi < 30 ? 'Survendu' : 'Neutre'} />
+            <StatCard label="Solde (paper)" value={`$${(PAPER_CAPITAL + (stats?.total_pnl ?? 0)).toFixed(2)}`} icon={<Wallet size={16} />} trend={stats?.total_pnl >= 0 ? 'up' : 'down'} sub={`Capital de base $${PAPER_CAPITAL}`} />
             <StatCard label="PnL Total" value={stats ? `${stats.total_pnl > 0 ? '+' : ''}${stats.total_pnl} USDT` : '—'} icon={stats?.total_pnl >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />} trend={stats?.total_pnl >= 0 ? 'up' : 'down'} />
             <StatCard label="Win Rate" value={stats ? `${(stats.win_rate * 100).toFixed(1)}%` : '—'} icon={<Trophy size={16} />} trend={stats?.win_rate >= 0.5 ? 'up' : 'down'} sub={stats ? `${stats.closed_trades} trades fermés` : undefined} />
           </>
@@ -83,68 +74,6 @@ export default function Dashboard() {
             </Card>
           ))
         )}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        <Card>
-          <h3 className="font-semibold text-zinc-100 mb-4 flex items-center gap-2">
-            <Activity size={16} className="text-cyan-400" />
-            Indicateurs BTC/USDT
-          </h3>
-          {indicatorsLoading ? (
-            <div className="space-y-2.5">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="flex justify-between">
-                  <Skeleton className="h-3 w-24" />
-                  <Skeleton className="h-3 w-20" />
-                </div>
-              ))}
-            </div>
-          ) : indicators ? (
-            <div className="space-y-2.5">
-              {[
-                { label: 'MACD', value: indicators.macd.macd.toFixed(2) },
-                { label: 'Signal', value: indicators.macd.signal.toFixed(2) },
-                { label: 'SMA 20', value: `$${indicators.sma_20.toLocaleString()}` },
-                { label: 'EMA 20', value: `$${indicators.ema_20.toLocaleString()}` },
-                { label: 'Bollinger Upper', value: `$${indicators.bollinger.upper.toLocaleString()}` },
-                { label: 'Bollinger Lower', value: `$${indicators.bollinger.lower.toLocaleString()}` },
-              ].map((row) => (
-                <div key={row.label} className="flex justify-between text-sm">
-                  <span className="text-zinc-500">{row.label}</span>
-                  <span className="text-zinc-200 font-mono">{row.value}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-zinc-600 text-sm">Indisponible</p>
-          )}
-        </Card>
-
-        <Card>
-          <h3 className="font-semibold text-zinc-100 mb-4">Solde Binance</h3>
-          {balanceLoading ? (
-            <div className="space-y-2.5">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex justify-between">
-                  <Skeleton className="h-3 w-16" />
-                  <Skeleton className="h-3 w-24" />
-                </div>
-              ))}
-            </div>
-          ) : balance ? (
-            <div className="space-y-2.5">
-              {Object.entries(balance.free || {}).filter(([_, v]: any) => v > 0).slice(0, 8).map(([k, v]: any) => (
-                <div key={k} className="flex justify-between text-sm">
-                  <span className="text-zinc-500">{k}</span>
-                  <span className="text-zinc-200 font-mono">{typeof v === 'number' ? v.toFixed(6) : v}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-zinc-600 text-sm">Indisponible</p>
-          )}
-        </Card>
       </div>
 
       <Card className="mb-6">
