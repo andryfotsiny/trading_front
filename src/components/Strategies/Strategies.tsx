@@ -24,6 +24,15 @@ const DEFAULT_FORM = {
   timeframe: 'auto',
 }
 
+function buildAutoName(type: string, symbol: string): string {
+  if (!type) return ''
+  const d = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const date = `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${String(d.getFullYear()).slice(-2)}`
+  const time = `${pad(d.getHours())}h${pad(d.getMinutes())}`
+  return `${type}_${symbol}_${date}_${time}`
+}
+
 const inputCls = 'w-full px-3 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-zinc-100 outline-none focus:border-cyan-500/50 transition-colors'
 const labelCls = 'text-xs text-zinc-500 mb-1 block'
 
@@ -35,10 +44,13 @@ export default function Strategies() {
   const createStrategy = useCreateStrategy()
   const deleteStrategy = useDeleteStrategy()
   const [form, setForm] = useState(DEFAULT_FORM)
+  const [autoName, setAutoName] = useState(true)
+
+  const finalName = autoName ? buildAutoName(form.strategy_type, form.symbol) : form.name
 
   const handleCreate = async () => {
-    if (!form.name || !form.strategy_type) return
-    await createStrategy.mutateAsync(form)
+    if (!finalName || !form.strategy_type) return
+    await createStrategy.mutateAsync({ ...form, name: finalName })
     setForm(DEFAULT_FORM)
     addToast('success', 'Strategie creee')
   }
@@ -62,9 +74,28 @@ export default function Strategies() {
           <h3 className="font-semibold text-zinc-100 mb-4">Nouvelle strategie</h3>
           <div className="space-y-3">
             <div>
-              <label className={labelCls}>Nom</label>
-              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="ex: dca_4h" className={inputCls} />
+              <div className="flex items-center justify-between mb-1">
+                <label className={labelCls + ' mb-0'}>Nom</label>
+                <button
+                  type="button"
+                  onClick={() => setAutoName(!autoName)}
+                  className={`px-2 py-0.5 rounded text-xs font-medium transition-all ${
+                    autoName
+                      ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
+                      : 'bg-zinc-700 text-zinc-400'
+                  }`}
+                >
+                  {autoName ? 'Auto' : 'Manuel'}
+                </button>
+              </div>
+              {autoName ? (
+                <div className={inputCls + ' text-zinc-400 font-mono text-xs truncate'}>
+                  {finalName || 'Choisir un type...'}
+                </div>
+              ) : (
+                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="ex: dca_4h" className={inputCls} />
+              )}
             </div>
             <div>
               <label className={labelCls}>Type</label>
@@ -91,7 +122,7 @@ export default function Strategies() {
             <p className="text-xs text-zinc-600">
               Stop Loss et Take Profit calcules automatiquement selon la volatilite (ATR).
             </p>
-            <Button onClick={handleCreate} disabled={createStrategy.isPending || !form.name || !form.strategy_type} className="w-full">
+            <Button onClick={handleCreate} disabled={createStrategy.isPending || !finalName || !form.strategy_type} className="w-full">
               {createStrategy.isPending ? 'Creation...' : 'Creer la strategie'}
             </Button>
           </div>

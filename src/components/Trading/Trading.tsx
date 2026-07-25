@@ -4,6 +4,7 @@ import { Card, Badge, Button, Table, PageHeader } from '../UI/Components'
 import { SkeletonTable, SkeletonCard } from '../UI/Skeleton'
 import { Modal } from '../UI/Modal'
 import { useOpenTrades, useBtcPrice, useCloseTrade, useCheckExits } from '../../hooks/useTrading'
+import { fmtDateTime } from '../../utils/format'
 
 export default function Trading() {
   const { addToast } = useToastStore()
@@ -72,16 +73,17 @@ export default function Trading() {
         </div>
 
         {tradesLoading ? (
-          <SkeletonTable rows={3} cols={9} />
+          <SkeletonTable rows={3} cols={10} />
         ) : trades.length === 0 ? (
           <p className="text-zinc-600 text-sm text-center py-8">Aucun trade ouvert</p>
         ) : (
-          <Table headers={['Paire', 'Side', 'Strategie', 'Entree', 'Actuel', 'SL', 'TP', 'Qté', 'Action']}>
+          <Table headers={['Paire', 'Side', 'Strategie', 'Entree le', 'Entree', 'Actuel', 'SL', 'TP', 'Qté', 'Action']}>
             {trades.map((t: any) => (
               <tr key={t.id}>
                 <td className="py-3 px-2 text-zinc-100 text-sm font-medium">{t.symbol}</td>
                 <td className="py-3 px-2 text-center"><Badge variant={t.side === 'BUY' ? 'success' : 'danger'}>{t.side}</Badge></td>
                 <td className="py-3 px-2 text-center text-cyan-400 text-sm">{t.strategy_name || '—'}</td>
+                <td className="py-3 px-2 text-center text-zinc-400 text-xs font-mono">{fmtDateTime(t.opened_at)}</td>
                 <td className="py-3 px-2 text-center text-zinc-300 text-sm font-mono">${t.entry_price}</td>
                 <td className="py-3 px-2 text-center text-cyan-300 text-sm font-mono">${price || '—'}</td>
                 <td className="py-3 px-2 text-center text-rose-400 text-sm font-mono">${t.stop_loss}</td>
