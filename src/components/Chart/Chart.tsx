@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { createChart, ColorType, LineStyle, UTCTimestamp } from 'lightweight-charts'
 import { Card } from '../UI/Components'
 import { useOhlcv, useOpenTrades, useTradeHistory } from '../../hooks/useTrading'
-import History from '../Trading/History'
 
 const PAIRS = ['BTC/USDT', 'ETH/USDT', 'BNB/USDT']
 const TIMEFRAMES = ['1m', '5m', '15m', '1h', '4h', '1d']
@@ -23,7 +22,6 @@ function snap(tsMs: number, times: number[]): number | null {
 }
 
 export default function ChartPage() {
-  const [view, setView] = useState<'chart' | 'table'>('chart')
   const [symbol, setSymbol] = useState('BTC/USDT')
   const [timeframe, setTimeframe] = useState('1h')
   const [showClosed, setShowClosed] = useState(true)
@@ -36,7 +34,7 @@ export default function ChartPage() {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (view !== 'chart' || !containerRef.current || !candles.length) return
+    if (!containerRef.current || !candles.length) return
 
     const chart = createChart(containerRef.current, {
       width: containerRef.current.clientWidth,
@@ -128,53 +126,35 @@ export default function ChartPage() {
       ro.disconnect()
       chart.remove()
     }
-  }, [view, candles, openTrades, history, showClosed, symbol])
+  }, [candles, openTrades, history, showClosed, symbol])
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-zinc-100">Graphique</h3>
-      </div>
-
       <div className="flex flex-wrap items-center gap-3 mb-4">
-        <div className="flex rounded-lg overflow-hidden border border-zinc-700">
-          <button onClick={() => setView('chart')} className={`px-4 py-2 text-sm ${view === 'chart' ? 'bg-cyan-500/10 text-cyan-400' : 'bg-zinc-800 text-zinc-400'}`}>Chart</button>
-          <button onClick={() => setView('table')} className={`px-4 py-2 text-sm ${view === 'table' ? 'bg-cyan-500/10 text-cyan-400' : 'bg-zinc-800 text-zinc-400'}`}>Tableau</button>
-        </div>
-
+        <button
+          onClick={() => setShowClosed(!showClosed)}
+          className={`px-3 py-2 rounded-lg text-sm border ${showClosed ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' : 'bg-zinc-800 text-zinc-400 border-zinc-700'}`}
+        >
+          Trades fermes
+        </button>
         <div className="flex-1" />
-
-        {view === 'chart' && (
-          <>
-            <button
-              onClick={() => setShowClosed(!showClosed)}
-              className={`px-3 py-2 rounded-lg text-sm border ${showClosed ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' : 'bg-zinc-800 text-zinc-400 border-zinc-700'}`}
-            >
-              Trades fermes
-            </button>
-            <select value={timeframe} onChange={(e) => setTimeframe(e.target.value)} className={selectCls}>
-              {TIMEFRAMES.map((tf) => <option key={tf} value={tf}>{tf}</option>)}
-            </select>
-          </>
-        )}
+        <select value={timeframe} onChange={(e) => setTimeframe(e.target.value)} className={selectCls}>
+          {TIMEFRAMES.map((tf) => <option key={tf} value={tf}>{tf}</option>)}
+        </select>
         <select value={symbol} onChange={(e) => setSymbol(e.target.value)} className={selectCls}>
           {PAIRS.map((p) => <option key={p} value={p}>{p}</option>)}
         </select>
       </div>
 
-      {view === 'table' ? (
-        <History />
-      ) : (
-        <Card>
-          {isLoading ? (
-            <div className="h-[520px] flex items-center justify-center text-zinc-600 text-sm">Chargement du chart...</div>
-          ) : !candles.length ? (
-            <div className="h-[520px] flex items-center justify-center text-zinc-600 text-sm">Aucune donnee</div>
-          ) : (
-            <div ref={containerRef} className="w-full" />
-          )}
-        </Card>
-      )}
+      <Card>
+        {isLoading ? (
+          <div className="h-[520px] flex items-center justify-center text-zinc-600 text-sm">Chargement du chart...</div>
+        ) : !candles.length ? (
+          <div className="h-[520px] flex items-center justify-center text-zinc-600 text-sm">Aucune donnee</div>
+        ) : (
+          <div ref={containerRef} className="w-full" />
+        )}
+      </Card>
     </div>
   )
 }
