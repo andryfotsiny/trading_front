@@ -49,23 +49,51 @@ export default function Optimizer() {
     setResults(null)
     const parts = symbol.split('/')
     try {
-      let url = ''
       if (mode === 'single') {
-        url = `/optimizer/single/${strategy}/${parts[0]}/${parts[1]}?timeframe=${timeframe}&limit=${limit}&capital=${capital}`
-      } else if (mode === 'single-multi-tf') {
+        const url = `/optimizer/single/${strategy}/${parts[0]}/${parts[1]}?timeframe=${timeframe}&limit=${limit}&capital=${capital}`
+        const { data } = await api.post(url)
+        setResults(data)
+        loadHistory()
+        setLoading(false)
+        return
+      }
+
+      let url = ''
+      if (mode === 'single-multi-tf') {
         url = `/optimizer/single-multi-tf/${strategy}/${parts[0]}/${parts[1]}?limit=${limit}&capital=${capital}`
       } else if (mode === 'all') {
         url = `/optimizer/all/${parts[0]}/${parts[1]}?timeframe=${timeframe}&limit=${limit}&capital=${capital}`
       } else {
         url = `/optimizer/all-multi-tf/${parts[0]}/${parts[1]}?limit=${limit}&capital=${capital}`
       }
-      const { data } = await api.post(url)
-      setResults(data)
-      loadHistory()
+
+      const before = await api.get('/optimizer/history').then((r) => r.data)
+      const maxIdBefore = before.length ? Math.max(...before.map((h: any) => h.id)) : 0
+
+      await api.post(url)
+
+      const started = Date.now()
+      const poll = async () => {
+        const list = await api.get('/optimizer/history').then((r) => r.data)
+        const fresh = list.find((h: any) => h.id > maxIdBefore && h.symbol === symbol && h.mode === mode)
+        if (fresh) {
+          setHistory(list)
+          await loadSaved(fresh.id)
+          setLoading(false)
+          return
+        }
+        if (Date.now() - started > 900000) {
+          setResults({ error: 'Optimisation trop longue. Verifie l historique dans quelques minutes.' })
+          setLoading(false)
+          return
+        }
+        setTimeout(poll, 8000)
+      }
+      poll()
     } catch (e: any) {
-      setResults({ error: e.response?.data?.detail || 'Erreur (timeout Binance?)' })
+      setResults({ error: e.response?.data?.detail || 'Erreur' })
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const loadSaved = async (id: number) => {
