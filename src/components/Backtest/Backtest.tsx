@@ -16,6 +16,7 @@ export default function Backtest() {
   const [slPct, setSlPct] = useState(0.02)
   const [tpPct, setTpPct] = useState(0.04)
   const [riskPct, setRiskPct] = useState(0.02)
+  const [realistic, setRealistic] = useState(true)
   const [result, setResult] = useState<any>(null)
   const [detail, setDetail] = useState<any>(null)
   const [history, setHistory] = useState<any[]>([])
@@ -36,7 +37,7 @@ export default function Backtest() {
     const parts = symbol.split('/')
     try {
       const { data } = await api.post(
-        `/backtest/run/${strategy}/${parts[0]}/${parts[1]}?timeframe=${timeframe}&limit=${limit}&capital=${capital}&risk_pct=${riskPct}&sl_pct=${slPct}&tp_pct=${tpPct}`
+        `/backtest/run/${strategy}/${parts[0]}/${parts[1]}?timeframe=${timeframe}&limit=${limit}&capital=${capital}&risk_pct=${riskPct}&sl_pct=${slPct}&tp_pct=${tpPct}&realistic=${realistic}`
       )
       setResult(data)
       api.get('/backtest/').then((r) => setHistory(r.data))
@@ -53,7 +54,7 @@ export default function Backtest() {
       const before = await api.get('/backtest/').then((r) => r.data)
       const maxIdBefore = before.length ? Math.max(...before.map((h: any) => h.id)) : 0
 
-      const { data } = await api.post(`/backtest/run-all/BTC/USDT?limit=${limit}&capital=${capital}`)
+      const { data } = await api.post(`/backtest/run-all/BTC/USDT?limit=${limit}&capital=${capital}&realistic=${realistic}`)
       if (data.error) {
         setBatchStatus(data.error)
         setBatchLoading(false)
@@ -149,6 +150,22 @@ export default function Backtest() {
               </div>
             </div>
             <p className="text-xs text-zinc-600">SL {(slPct*100).toFixed(0)}% = ferme si perd {(slPct*100).toFixed(0)}% | TP {(tpPct*100).toFixed(0)}% = ferme si gagne {(tpPct*100).toFixed(0)}%</p>
+            <div className="flex items-center justify-between bg-zinc-800 rounded-lg px-3 py-2.5">
+              <div>
+                <p className="text-sm text-zinc-200">Mode realiste</p>
+                <p className="text-xs text-zinc-500">Filtre MA50, SL/TP ATR, trailing break-even (comme le bot live)</p>
+              </div>
+              <button
+                onClick={() => setRealistic(!realistic)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  realistic
+                    ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
+                    : 'bg-zinc-700 text-zinc-400'
+                }`}
+              >
+                {realistic ? 'Active' : 'Desactive'}
+              </button>
+            </div>
             <Button onClick={runBacktest} disabled={loading} className="w-full">
               {loading ? 'Calcul en cours...' : 'Lancer le backtest'}
             </Button>
@@ -212,11 +229,17 @@ export default function Backtest() {
       {history.length > 0 && (
         <Card>
           <h3 className="font-semibold text-zinc-100 mb-4">Historique backtests</h3>
-          <Table headers={['Strategie', 'Paire', 'Trades', 'Win rate', 'PnL', 'Drawdown', 'Actions']}>
+          <Table headers={['Strategie', 'Paire', 'TF', 'Mode', 'Trades', 'Win rate', 'PnL', 'Drawdown', 'Actions']}>
             {history.map((b: any) => (
               <tr key={b.id}>
                 <td className="py-3 px-2 text-zinc-100 text-sm font-medium">{b.strategy_type}</td>
                 <td className="py-3 px-2 text-center text-zinc-300 text-sm">{b.symbol}</td>
+                <td className="py-3 px-2 text-center text-zinc-400 text-xs">{b.timeframe}</td>
+                <td className="py-3 px-2 text-center">
+                  <Badge variant={b.parameters?.mode === 'realistic' ? 'info' : 'neutral'}>
+                    {b.parameters?.mode === 'realistic' ? 'Realiste' : 'Classique'}
+                  </Badge>
+                </td>
                 <td className="py-3 px-2 text-center text-zinc-300 text-sm">{b.total_trades}</td>
                 <td className="py-3 px-2 text-center"><Badge variant={b.win_rate >= 0.5 ? 'success' : 'danger'}>{(b.win_rate * 100).toFixed(1)}%</Badge></td>
                 <td className={`py-3 px-2 text-center text-sm font-mono ${b.total_pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{b.total_pnl > 0 ? '+' : ''}{b.total_pnl} USDT</td>
