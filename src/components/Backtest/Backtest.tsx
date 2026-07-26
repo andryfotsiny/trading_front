@@ -212,17 +212,12 @@ export default function Backtest() {
       {history.length > 0 && (
         <Card>
           <h3 className="font-semibold text-zinc-100 mb-4">Historique backtests</h3>
-          <Table headers={['Strategie', 'Paire', 'TF', 'Mode', 'Trades', 'Win rate', 'PnL', 'Drawdown', 'Actions']}>
+          <Table headers={['Strategie', 'Paire', 'TF', 'Trades', 'Win rate', 'PnL', 'Drawdown', 'Actions']}>
             {history.map((b: any) => (
               <tr key={b.id}>
                 <td className="py-3 px-2 text-zinc-100 text-sm font-medium">{b.strategy_type}</td>
                 <td className="py-3 px-2 text-center text-zinc-300 text-sm">{b.symbol}</td>
                 <td className="py-3 px-2 text-center text-zinc-400 text-xs">{b.timeframe}</td>
-                <td className="py-3 px-2 text-center">
-                  <Badge variant={b.parameters?.mode === 'classic' ? 'neutral' : 'info'}>
-                    {b.parameters?.mode === 'classic' ? 'Classique (obsolete)' : 'Realiste'}
-                  </Badge>
-                </td>
                 <td className="py-3 px-2 text-center text-zinc-300 text-sm">{b.total_trades}</td>
                 <td className="py-3 px-2 text-center"><Badge variant={b.win_rate >= 0.5 ? 'success' : 'danger'}>{(b.win_rate * 100).toFixed(1)}%</Badge></td>
                 <td className={`py-3 px-2 text-center text-sm font-mono ${b.total_pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{b.total_pnl > 0 ? '+' : ''}{b.total_pnl} USDT</td>
