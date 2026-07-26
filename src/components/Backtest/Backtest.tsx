@@ -21,6 +21,8 @@ export default function Backtest() {
   const [history, setHistory] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [types, setTypes] = useState<string[]>([])
+  const [batchLoading, setBatchLoading] = useState(false)
+  const [batchStatus, setBatchStatus] = useState('')
 
   useEffect(() => {
     api.get('/strategies/types').then((r) => setTypes(r.data.available))
@@ -42,6 +44,47 @@ export default function Backtest() {
       setResult({ error: e.response?.data?.detail || 'Erreur (timeout Binance?)' })
     }
     setLoading(false)
+  }
+
+  const runAllBacktests = async () => {
+    setBatchLoading(true)
+    setBatchStatus('Demarrage...')
+    try {
+      const before = await api.get('/backtest/').then((r) => r.data)
+      const maxIdBefore = before.length ? Math.max(...before.map((h: any) => h.id)) : 0
+
+      const { data } = await api.post(`/backtest/run-all/BTC/USDT?limit=${limit}&capital=${capital}`)
+      if (data.error) {
+        setBatchStatus(data.error)
+        setBatchLoading(false)
+        return
+      }
+      const expected = data.strategies_count
+      setBatchStatus(`Backtest de ${expected} strategie(s) en cours...`)
+
+      const started = Date.now()
+      const poll = async () => {
+        const list = await api.get('/backtest/').then((r) => r.data)
+        const fresh = list.filter((h: any) => h.id > maxIdBefore)
+        setHistory(list)
+        if (fresh.length >= expected) {
+          setBatchStatus(`Termine: ${fresh.length}/${expected} strategie(s) backtestees`)
+          setBatchLoading(false)
+          return
+        }
+        if (Date.now() - started > 900000) {
+          setBatchStatus(`Timeout: ${fresh.length}/${expected} termines, verifie l historique`)
+          setBatchLoading(false)
+          return
+        }
+        setBatchStatus(`Backtest en cours... (${fresh.length}/${expected})`)
+        setTimeout(poll, 6000)
+      }
+      poll()
+    } catch (e: any) {
+      setBatchStatus(e.response?.data?.detail || 'Erreur')
+      setBatchLoading(false)
+    }
   }
 
   const viewDetail = async (id: number) => {
@@ -109,6 +152,12 @@ export default function Backtest() {
             <Button onClick={runBacktest} disabled={loading} className="w-full">
               {loading ? 'Calcul en cours...' : 'Lancer le backtest'}
             </Button>
+            <div className="border-t border-zinc-800 pt-3">
+              <Button onClick={runAllBacktests} disabled={batchLoading} variant="ghost" className="w-full">
+                {batchLoading ? 'Backtest multi-strategies...' : 'Backtester toutes mes strategies actives'}
+              </Button>
+              {batchStatus && <p className="text-xs text-zinc-500 mt-2 text-center">{batchStatus}</p>}
+            </div>
           </div>
         </Card>
 
