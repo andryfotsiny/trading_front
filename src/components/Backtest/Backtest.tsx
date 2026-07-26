@@ -16,7 +16,6 @@ export default function Backtest() {
   const [slPct, setSlPct] = useState(0.02)
   const [tpPct, setTpPct] = useState(0.04)
   const [riskPct, setRiskPct] = useState(0.02)
-  const [realistic, setRealistic] = useState(true)
   const [result, setResult] = useState<any>(null)
   const [detail, setDetail] = useState<any>(null)
   const [history, setHistory] = useState<any[]>([])
@@ -37,7 +36,7 @@ export default function Backtest() {
     const parts = symbol.split('/')
     try {
       const { data } = await api.post(
-        `/backtest/run/${strategy}/${parts[0]}/${parts[1]}?timeframe=${timeframe}&limit=${limit}&capital=${capital}&risk_pct=${riskPct}&sl_pct=${slPct}&tp_pct=${tpPct}&realistic=${realistic}`
+        `/backtest/run/${strategy}/${parts[0]}/${parts[1]}?timeframe=${timeframe}&limit=${limit}&capital=${capital}&risk_pct=${riskPct}&sl_pct=${slPct}&tp_pct=${tpPct}`
       )
       setResult(data)
       api.get('/backtest/').then((r) => setHistory(r.data))
@@ -54,7 +53,7 @@ export default function Backtest() {
       const before = await api.get('/backtest/').then((r) => r.data)
       const maxIdBefore = before.length ? Math.max(...before.map((h: any) => h.id)) : 0
 
-      const { data } = await api.post(`/backtest/run-all/BTC/USDT?limit=${limit}&capital=${capital}&realistic=${realistic}`)
+      const { data } = await api.post(`/backtest/run-all/BTC/USDT?limit=${limit}&capital=${capital}`)
       if (data.error) {
         setBatchStatus(data.error)
         setBatchLoading(false)
@@ -149,23 +148,7 @@ export default function Backtest() {
                 <input type="number" step="0.01" value={tpPct} onChange={(e) => setTpPct(+e.target.value)} className={inputCls} />
               </div>
             </div>
-            <p className="text-xs text-zinc-600">SL {(slPct*100).toFixed(0)}% = ferme si perd {(slPct*100).toFixed(0)}% | TP {(tpPct*100).toFixed(0)}% = ferme si gagne {(tpPct*100).toFixed(0)}%</p>
-            <div className="flex items-center justify-between bg-zinc-800 rounded-lg px-3 py-2.5">
-              <div>
-                <p className="text-sm text-zinc-200">Mode realiste</p>
-                <p className="text-xs text-zinc-500">Filtre MA50, SL/TP ATR, trailing break-even (comme le bot live)</p>
-              </div>
-              <button
-                onClick={() => setRealistic(!realistic)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  realistic
-                    ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
-                    : 'bg-zinc-700 text-zinc-400'
-                }`}
-              >
-                {realistic ? 'Active' : 'Desactive'}
-              </button>
-            </div>
+            <p className="text-xs text-zinc-600">SL/TP {(slPct*100).toFixed(0)}%/{(tpPct*100).toFixed(0)}% utilises seulement si l ATR est indisponible. Filtre MA50 et trailing break-even toujours actifs (comme le bot live).</p>
             <Button onClick={runBacktest} disabled={loading} className="w-full">
               {loading ? 'Calcul en cours...' : 'Lancer le backtest'}
             </Button>
@@ -236,8 +219,8 @@ export default function Backtest() {
                 <td className="py-3 px-2 text-center text-zinc-300 text-sm">{b.symbol}</td>
                 <td className="py-3 px-2 text-center text-zinc-400 text-xs">{b.timeframe}</td>
                 <td className="py-3 px-2 text-center">
-                  <Badge variant={b.parameters?.mode === 'realistic' ? 'info' : 'neutral'}>
-                    {b.parameters?.mode === 'realistic' ? 'Realiste' : 'Classique'}
+                  <Badge variant={b.parameters?.mode === 'classic' ? 'neutral' : 'info'}>
+                    {b.parameters?.mode === 'classic' ? 'Classique (obsolete)' : 'Realiste'}
                   </Badge>
                 </td>
                 <td className="py-3 px-2 text-center text-zinc-300 text-sm">{b.total_trades}</td>
