@@ -6,7 +6,7 @@ import { Modal } from '../UI/Modal'
 import ChartPage from '../Chart/Chart'
 import { useAnimatedPrice } from '../../hooks/useAnimatedPrice'
 import {
-  useDashboardStats, useStrategyStats, useOpenTrades,
+  useDashboardStats, useOpenTrades,
   usePrices, useBalance, useCloseTrade, useCheckExits,
 } from '../../hooks/useTrading'
 
@@ -14,8 +14,7 @@ const PAPER_CAPITAL = 1000
 
 export default function Dashboard() {
   const { addToast } = useToastStore()
-  const { data: stats, isLoading: statsLoading } = useDashboardStats()
-  const { data: stratStats = [], isLoading: stratLoading } = useStrategyStats()
+  const { data: stats } = useDashboardStats()
   const { data: trades = [], isLoading: tradesLoading } = useOpenTrades()
   const { data: prices = {}, isLoading: pricesLoading } = usePrices(trades.map((t: any) => t.symbol))
   const { data: balance } = useBalance()
@@ -69,30 +68,6 @@ export default function Dashboard() {
       <div className="mb-6">
         <ChartPage />
       </div>
-
-      <Card className="mb-6">
-        <h3 className="font-semibold text-zinc-100 mb-4">Classement des strategies</h3>
-        {stratLoading ? (
-          <SkeletonTable rows={4} cols={8} />
-        ) : stratStats.length > 0 ? (
-          <Table headers={['#', 'Strategie', 'Trades', 'TP', 'SL', 'Win Rate', 'PnL', 'PnL moy.']}>
-            {stratStats.map((s: any, i: number) => (
-              <tr key={s.strategy}>
-                <td className="py-3 px-2 text-zinc-500 text-sm">{i + 1}</td>
-                <td className="py-3 px-2 text-zinc-100 font-medium text-sm">{s.strategy}</td>
-                <td className="py-3 px-2 text-center text-zinc-300 text-sm">{s.total_trades}</td>
-                <td className="py-3 px-2 text-center text-emerald-400 text-sm">{s.wins}</td>
-                <td className="py-3 px-2 text-center text-rose-400 text-sm">{s.losses}</td>
-                <td className="py-3 px-2 text-center"><Badge variant={s.win_rate >= 0.5 ? 'success' : 'danger'}>{(s.win_rate * 100).toFixed(1)}%</Badge></td>
-                <td className={`py-3 px-2 text-center text-sm font-mono ${s.total_pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{s.total_pnl > 0 ? '+' : ''}{s.total_pnl}</td>
-                <td className={`py-3 px-2 text-center text-sm font-mono ${s.avg_pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{s.avg_pnl > 0 ? '+' : ''}{s.avg_pnl}</td>
-              </tr>
-            ))}
-          </Table>
-        ) : (
-          <p className="text-zinc-600 text-sm">Aucune strategie avec des trades</p>
-        )}
-      </Card>
 
       <Card>
         <div className="flex items-center justify-between mb-4">
