@@ -3,6 +3,7 @@ import api from '../../services/api'
 import { Card, Badge, Button, Table, PageHeader } from '../UI/Components'
 import { SkeletonTable } from '../UI/Skeleton'
 import { Trash2 } from 'lucide-react'
+import { TRADING_PAIRS } from '../../utils/pairs'
 
 const inputCls = 'w-full px-3 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-zinc-100 outline-none focus:border-cyan-500/50 transition-colors'
 const labelCls = 'text-xs text-zinc-500 mb-1 block'
@@ -53,7 +54,7 @@ export default function Backtest() {
       const before = await api.get('/backtest/').then((r) => r.data)
       const maxIdBefore = before.length ? Math.max(...before.map((h: any) => h.id)) : 0
 
-      const { data } = await api.post(`/backtest/run-all/BTC/USDT?limit=${limit}&capital=${capital}`)
+      const { data } = await api.post(`/backtest/run-all?limit=${limit}&capital=${capital}`)
       if (data.error) {
         setBatchStatus(data.error)
         setBatchLoading(false)
@@ -117,7 +118,7 @@ export default function Backtest() {
             <div>
               <label className={labelCls}>Paire</label>
               <select value={symbol} onChange={(e) => setSymbol(e.target.value)} className={inputCls}>
-                <option>BTC/USDT</option><option>ETH/USDT</option><option>BNB/USDT</option>
+                {TRADING_PAIRS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
               </select>
             </div>
             <div>

@@ -7,7 +7,7 @@ import ChartPage from '../Chart/Chart'
 import { useAnimatedPrice } from '../../hooks/useAnimatedPrice'
 import {
   useDashboardStats, useStrategyStats, useOpenTrades,
-  useBtcPrice, useBalance, useCloseTrade, useCheckExits,
+  usePrices, useBalance, useCloseTrade, useCheckExits,
 } from '../../hooks/useTrading'
 
 const PAPER_CAPITAL = 1000
@@ -17,13 +17,14 @@ export default function Dashboard() {
   const { data: stats, isLoading: statsLoading } = useDashboardStats()
   const { data: stratStats = [], isLoading: stratLoading } = useStrategyStats()
   const { data: trades = [], isLoading: tradesLoading } = useOpenTrades()
-  const { data: price, isLoading: priceLoading } = useBtcPrice()
+  const { data: prices = {}, isLoading: pricesLoading } = usePrices(trades.map((t: any) => t.symbol))
   const { data: balance } = useBalance()
   const closeTrade = useCloseTrade()
   const checkExits = useCheckExits()
-  const { flashClass } = useAnimatedPrice(price)
 
   const [confirmTrade, setConfirmTrade] = useState<{ id: number; symbol: string; side: string; entry: number } | null>(null)
+  const confirmPrice = confirmTrade ? prices[confirmTrade.symbol] : undefined
+  const { flashClass } = useAnimatedPrice(confirmPrice)
 
   const handleCloseConfirm = async () => {
     if (!confirmTrade) return
@@ -114,7 +115,7 @@ export default function Dashboard() {
                 <td className="py-3 px-2 text-center text-cyan-400 text-sm">{t.strategy_name || '—'}</td>
                 <td className="py-3 px-2 text-center text-zinc-300 text-sm font-mono">${t.entry_price}</td>
                 <td className="py-3 px-2 text-center text-sm font-mono">
-                  {priceLoading ? <Skeleton className="h-3 w-16 mx-auto" /> : <span className={flashClass}>${price || '—'}</span>}
+                  {pricesLoading ? <Skeleton className="h-3 w-16 mx-auto" /> : <span>${prices[t.symbol] || '—'}</span>}
                 </td>
                 <td className="py-3 px-2 text-center text-rose-400 text-sm font-mono">${t.stop_loss}</td>
                 <td className="py-3 px-2 text-center text-emerald-400 text-sm font-mono">${t.take_profit}</td>
@@ -163,18 +164,18 @@ export default function Dashboard() {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-zinc-500">Prix actuel</span>
-                <span className={`font-mono ${flashClass}`}>${price || '—'}</span>
+                <span className={`font-mono ${flashClass}`}>${confirmPrice || '—'}</span>
               </div>
-              {price && (
+              {confirmPrice && (
                 <div className="flex justify-between text-sm border-t border-zinc-700 pt-2 mt-2">
                   <span className="text-zinc-500">PnL estimé</span>
                   <span className={`font-mono font-bold ${
-                    (confirmTrade.side === 'BUY' ? price - confirmTrade.entry : confirmTrade.entry - price) >= 0
+                    (confirmTrade.side === 'BUY' ? confirmPrice - confirmTrade.entry : confirmTrade.entry - confirmPrice) >= 0
                       ? 'text-emerald-400' : 'text-rose-400'
                   }`}>
                     {confirmTrade.side === 'BUY'
-                      ? `${((price - confirmTrade.entry) * (20 / confirmTrade.entry)).toFixed(2)} USDT`
-                      : `${((confirmTrade.entry - price) * (20 / confirmTrade.entry)).toFixed(2)} USDT`
+                      ? `${((confirmPrice - confirmTrade.entry) * (20 / confirmTrade.entry)).toFixed(2)} USDT`
+                      : `${((confirmTrade.entry - confirmPrice) * (20 / confirmTrade.entry)).toFixed(2)} USDT`
                     }
                   </span>
                 </div>

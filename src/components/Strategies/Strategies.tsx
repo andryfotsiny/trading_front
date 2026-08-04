@@ -4,6 +4,7 @@ import { SkeletonList } from '../UI/Skeleton'
 import { useStrategies, useStrategyTypes, useToggleStrategy, useCreateStrategy, useDeleteStrategy } from '../../hooks/useTrading'
 import { useToastStore } from '../../store/toastStore'
 import { Trash2, Lock } from 'lucide-react'
+import { TRADING_PAIRS } from '../../utils/pairs'
 
 const LEVELS: Record<string, 'success' | 'warning' | 'info'> = {
   rsi_oversold: 'success', macd_crossover: 'success', sma_crossover: 'success', bollinger_bounce: 'success',
@@ -119,9 +120,7 @@ export default function Strategies() {
             <div>
               <label className={labelCls}>Paire</label>
               <select value={form.symbol} onChange={(e) => setForm({ ...form, symbol: e.target.value })} className={inputCls}>
-                <option>BTC/USDT</option>
-                <option>ETH/USDT</option>
-                <option>BNB/USDT</option>
+                {TRADING_PAIRS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
               </select>
             </div>
             <div>

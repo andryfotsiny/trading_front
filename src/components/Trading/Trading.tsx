@@ -3,13 +3,13 @@ import { useToastStore } from '../../store/toastStore'
 import { Card, Badge, Button, Table, PageHeader } from '../UI/Components'
 import { SkeletonTable, SkeletonCard } from '../UI/Skeleton'
 import { Modal } from '../UI/Modal'
-import { useOpenTrades, useBtcPrice, useCloseTrade, useCheckExits } from '../../hooks/useTrading'
+import { useOpenTrades, usePrices, useCloseTrade, useCheckExits } from '../../hooks/useTrading'
 import { fmtDateTime } from '../../utils/format'
 
 export default function Trading() {
   const { addToast } = useToastStore()
   const { data: trades = [], isLoading: tradesLoading } = useOpenTrades()
-  const { data: price } = useBtcPrice()
+  const { data: prices = {} } = usePrices(trades.map((t: any) => t.symbol))
   const closeTrade = useCloseTrade()
   const checkExits = useCheckExits()
   const [confirmTrade, setConfirmTrade] = useState<{ id: number; symbol: string; side: string; entry: number } | null>(null)
@@ -36,9 +36,9 @@ export default function Trading() {
     <div>
       <PageHeader title="Trading" sub="Gestion des trades ouverts" />
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-2 gap-4 mb-6">
         {tradesLoading ? (
-          Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)
+          Array.from({ length: 2 }).map((_, i) => <SkeletonCard key={i} />)
         ) : (
           <>
             <Card className="text-center">
@@ -46,13 +46,9 @@ export default function Trading() {
               <p className="text-2xl font-bold text-amber-400">{trades.length}</p>
             </Card>
             <Card className="text-center">
-              <p className="text-xs text-zinc-500 mb-1">Prix BTC</p>
-              <p className="text-xl font-bold text-cyan-400 font-mono">{price ? `$${price.toLocaleString()}` : '—'}</p>
-            </Card>
-            <Card className="text-center">
               <p className="text-xs text-zinc-500 mb-1">Exposition totale</p>
               <p className="text-xl font-bold text-zinc-100">
-                {trades.length > 0 && price
+                {trades.length > 0
                   ? `$${(trades.reduce((s: number, t: any) => s + t.quantity * t.entry_price, 0)).toFixed(0)}`
                   : '—'}
               </p>
@@ -85,7 +81,7 @@ export default function Trading() {
                 <td className="py-3 px-2 text-center text-cyan-400 text-sm">{t.strategy_name || '—'}</td>
                 <td className="py-3 px-2 text-center text-zinc-400 text-xs font-mono">{fmtDateTime(t.opened_at)}</td>
                 <td className="py-3 px-2 text-center text-zinc-300 text-sm font-mono">${t.entry_price}</td>
-                <td className="py-3 px-2 text-center text-cyan-300 text-sm font-mono">${price || '—'}</td>
+                <td className="py-3 px-2 text-center text-cyan-300 text-sm font-mono">${prices[t.symbol] || '—'}</td>
                 <td className="py-3 px-2 text-center text-rose-400 text-sm font-mono">${t.stop_loss}</td>
                 <td className="py-3 px-2 text-center text-emerald-400 text-sm font-mono">${t.take_profit}</td>
                 <td className="py-3 px-2 text-center text-zinc-400 text-xs">{t.quantity}</td>
@@ -116,7 +112,7 @@ export default function Trading() {
               <div className="flex justify-between"><span className="text-zinc-500">Paire</span><span className="text-zinc-100">{confirmTrade.symbol}</span></div>
               <div className="flex justify-between"><span className="text-zinc-500">Side</span><Badge variant={confirmTrade.side === 'BUY' ? 'success' : 'danger'}>{confirmTrade.side}</Badge></div>
               <div className="flex justify-between"><span className="text-zinc-500">Prix entree</span><span className="text-zinc-100 font-mono">${confirmTrade.entry}</span></div>
-              <div className="flex justify-between"><span className="text-zinc-500">Prix actuel</span><span className="text-cyan-400 font-mono">${price || '—'}</span></div>
+              <div className="flex justify-between"><span className="text-zinc-500">Prix actuel</span><span className="text-cyan-400 font-mono">${prices[confirmTrade.symbol] || '—'}</span></div>
             </div>
           </div>
         )}

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import api from '../../services/api'
 import { Trophy, Search, Zap, Clock } from 'lucide-react'
+import { TRADING_PAIRS } from '../../utils/pairs'
 
 type Mode = 'single' | 'single-multi-tf' | 'all' | 'all-multi-tf'
 
@@ -160,7 +161,7 @@ export default function Optimizer() {
               <label className="text-xs text-gray-400 mb-1 block">Paire</label>
               <select value={symbol} onChange={(e) => setSymbol(e.target.value)}
                 className="w-full p-3 bg-gray-800 rounded-lg border border-gray-700 outline-none">
-                <option>BTC/USDT</option><option>ETH/USDT</option><option>BNB/USDT</option>
+                {TRADING_PAIRS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
               </select>
             </div>
             {showTimeframe && (

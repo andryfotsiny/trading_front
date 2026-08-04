@@ -48,6 +48,23 @@ export function useBtcPrice() {
   })
 }
 
+export function usePrices(symbols: string[]) {
+  const unique = Array.from(new Set(symbols)).sort()
+  return useQuery({
+    queryKey: ['market', 'prices', unique],
+    queryFn: async () => {
+      const entries = await Promise.all(
+        unique.map((s) =>
+          api.get(`/market/price/${s}`).then((r) => [s, r.data.price] as const)
+        )
+      )
+      return Object.fromEntries(entries) as Record<string, number>
+    },
+    enabled: unique.length > 0,
+    refetchInterval: 10000,
+  })
+}
+
 export function useBalance() {
   return useQuery({
     queryKey: ['exchanges', 'balance'],

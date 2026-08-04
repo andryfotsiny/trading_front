@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { createChart, ColorType, LineStyle, UTCTimestamp } from 'lightweight-charts'
 import { Card } from '../UI/Components'
 import { useOhlcv, useOpenTrades, useTradeHistory } from '../../hooks/useTrading'
+import { TRADING_PAIRS } from '../../utils/pairs'
 
-const PAIRS = ['BTC/USDT', 'ETH/USDT', 'BNB/USDT']
 const TIMEFRAMES = ['1m', '5m', '15m', '1h', '4h', '1d']
 
 const GREEN = '#22c55e'
@@ -142,7 +142,7 @@ export default function ChartPage() {
           {TIMEFRAMES.map((tf) => <option key={tf} value={tf}>{tf}</option>)}
         </select>
         <select value={symbol} onChange={(e) => setSymbol(e.target.value)} className={selectCls}>
-          {PAIRS.map((p) => <option key={p} value={p}>{p}</option>)}
+          {TRADING_PAIRS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
         </select>
       </div>
 
