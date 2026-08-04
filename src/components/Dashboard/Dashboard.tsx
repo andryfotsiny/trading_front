@@ -65,11 +65,7 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div className="mb-6">
-        <ChartPage />
-      </div>
-
-      <Card>
+      <Card className="mb-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-zinc-100">
             Trades ouverts
@@ -111,6 +107,10 @@ export default function Dashboard() {
           <p className="text-zinc-600 text-sm text-center py-6">Aucun trade ouvert</p>
         )}
       </Card>
+
+      <div className="mb-6">
+        <ChartPage />
+      </div>
 
       <Modal
         open={!!confirmTrade}

@@ -14,9 +14,6 @@ export default function Backtest() {
   const [timeframe, setTimeframe] = useState('1h')
   const [limit, setLimit] = useState(500)
   const [capital, setCapital] = useState(1000)
-  const [slPct, setSlPct] = useState(0.02)
-  const [tpPct, setTpPct] = useState(0.04)
-  const [riskPct, setRiskPct] = useState(0.02)
   const [result, setResult] = useState<any>(null)
   const [detail, setDetail] = useState<any>(null)
   const [history, setHistory] = useState<any[]>([])
@@ -37,7 +34,7 @@ export default function Backtest() {
     const parts = symbol.split('/')
     try {
       const { data } = await api.post(
-        `/backtest/run/${strategy}/${parts[0]}/${parts[1]}?timeframe=${timeframe}&limit=${limit}&capital=${capital}&risk_pct=${riskPct}&sl_pct=${slPct}&tp_pct=${tpPct}`
+        `/backtest/run/${strategy}/${parts[0]}/${parts[1]}?timeframe=${timeframe}&limit=${limit}&capital=${capital}`
       )
       setResult(data)
       api.get('/backtest/').then((r) => setHistory(r.data))
@@ -135,21 +132,7 @@ export default function Backtest() {
               <label className={labelCls}>Capital de depart (USDT)</label>
               <input type="number" value={capital} onChange={(e) => setCapital(+e.target.value)} className={inputCls} />
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              <div>
-                <label className={labelCls}>Risque %</label>
-                <input type="number" step="0.01" value={riskPct} onChange={(e) => setRiskPct(+e.target.value)} className={inputCls} />
-              </div>
-              <div>
-                <label className={labelCls}>Stop-Loss %</label>
-                <input type="number" step="0.01" value={slPct} onChange={(e) => setSlPct(+e.target.value)} className={inputCls} />
-              </div>
-              <div>
-                <label className={labelCls}>Take-Profit %</label>
-                <input type="number" step="0.01" value={tpPct} onChange={(e) => setTpPct(+e.target.value)} className={inputCls} />
-              </div>
-            </div>
-            <p className="text-xs text-zinc-600">SL/TP {(slPct*100).toFixed(0)}%/{(tpPct*100).toFixed(0)}% utilises seulement si l ATR est indisponible. Filtre MA50 et trailing break-even toujours actifs (comme le bot live).</p>
+            <p className="text-xs text-zinc-600">Risque, Stop-Loss et Take-Profit sont calcules automatiquement (ATR + ADX), comme le bot live. Filtre MA50 et trailing break-even toujours actifs.</p>
             <Button onClick={runBacktest} disabled={loading} className="w-full">
               {loading ? 'Calcul en cours...' : 'Lancer le backtest'}
             </Button>
